@@ -48,58 +48,62 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                     transition: "0.2s",
                   }}
                 >
-                  ♠ Poker Scoreboard ♦
+                  ♠ Jsr Casino ♦
                 </Button>
               </Typography>
 
               <Box sx={{ display: "flex", gap: 2 }}>
-                <Button
+
+              <Button
                   component={Link}
-                  href="/scoreboard"
+                  href="/blackjack"
                   sx={{
                     color: "gold",
                     "&:hover": { color: "white", transform: "scale(1.1)" },
                     transition: "0.2s",
                   }}
                 >
-                  ♣ Scoreboard
+                 ♣ Black Jack
                 </Button>
 
                 <Button
                   component={Link}
-                  href="/scoreboard/history"
+                  href="/poker"
                   sx={{
                     color: "gold",
                     "&:hover": { color: "white", transform: "scale(1.1)" },
                     transition: "0.2s",
                   }}
                 >
-                  ♥ History
+                 ♦ Poker
                 </Button>
 
                 <Button
                   component={Link}
-                  href="/players"
+                  href="/roulette"
                   sx={{
                     color: "gold",
                     "&:hover": { color: "white", transform: "scale(1.1)" },
                     transition: "0.2s",
                   }}
                 >
-                  ♠ Players
+                 ♠ Roulette
                 </Button>
+
 
                 <Button
                   component={Link}
-                  href="/hall-of-fame"
+                  href="/login"
                   sx={{
                     color: "gold",
                     "&:hover": { color: "white", transform: "scale(1.1)" },
                     transition: "0.2s",
                   }}
                 >
-                  ♦ Hall of Fame
+                 Login
                 </Button>
+
+
               </Box>
             </Toolbar>
           </AppBar>

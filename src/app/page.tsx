@@ -1,54 +1,133 @@
 "use client";
 
-import { AppBar, Toolbar, Typography, Button, Stack } from "@mui/material";
+import {
+  Box,
+  Typography,
+  Button,
+  Stack,
+  Card,
+  CardContent,
+} from "@mui/material";
 import Link from "next/link";
 
 export default function HomePage() {
   return (
-    <div>
-      <AppBar position="static">
-        <Toolbar>
-          <Typography variant="h6">Poker Scoreboard</Typography>
-        </Toolbar>
-      </AppBar>
+    <Box
+      sx={{
+        minHeight: "90vh",
+        background: "radial-gradient(circle at top, #8b0000, #1a0000 70%)",
+        color: "white",
+        textAlign: "center",
+        py: 10,
+      }}
+    >
+      {/* HERO SECTION */}
+      <Typography
+        variant="h2"
+        sx={{
+          fontWeight: "bold",
+          color: "gold",
+          textShadow: "0 0 20px rgba(255,215,0,0.6)",
+          mb: 7,
+        }}
+      >
+        ♠ JSR Casino ♦
+      </Typography>
 
-      <Stack spacing={2} direction="row" justifyContent="center" mt={5}>
+
+      <Stack direction="row" spacing={3} justifyContent="center" mb={10}>
         <Button
-          variant="contained"
-          color="primary"
           component={Link}
-          href="/scoreboard"
+          href="/login"
+          variant="contained"
+          sx={{
+            backgroundColor: "gold",
+            color: "black",
+            fontWeight: "bold",
+            px: 4,
+            "&:hover": {
+              backgroundColor: "#ffd700",
+              transform: "scale(1.05)",
+            },
+            transition: "0.2s",
+          }}
         >
-          Scoreboard
+          Login
         </Button>
 
         <Button
-          variant="contained"
-          color="success"
           component={Link}
-          href="/scoreboard/history"
+          href="/register"
+          variant="outlined"
+          sx={{
+            borderColor: "gold",
+            color: "gold",
+            fontWeight: "bold",
+            px: 4,
+            "&:hover": {
+              backgroundColor: "rgba(255,215,0,0.1)",
+              transform: "scale(1.05)",
+            },
+            transition: "0.2s",
+          }}
         >
-          History
-        </Button>
-
-        <Button
-          variant="contained"
-          color="secondary"
-          component={Link}
-          href="/players"
-        >
-          Players
-        </Button>
-
-        <Button
-          variant="contained"
-          color="secondary"
-          component={Link}
-          href="/hall-of-fame"
-        >
-          Hall of Fame
+          Register
         </Button>
       </Stack>
-    </div>
+
+      {/* GAME PREVIEW CARDS */}
+      <Stack
+        direction={{ xs: "column", md: "row" }}
+        spacing={4}
+        justifyContent="center"
+        alignItems="center"
+      >
+        {[
+          { title: "♣ Black Jack", link: "/blackjack" },
+          { title: "♦ Poker", link: "/poker" },
+          { title: "♠ Roulette", link: "/roulette" },
+        ].map((game) => (
+          <Card
+            key={game.title}
+            sx={{
+              width: 280,
+              background: "linear-gradient(145deg, #4a1f1f, #2a0f0f)",
+              border: "2px solid gold",
+              borderRadius: 4,
+              boxShadow: "0 0 20px rgba(255,215,0,0.3)",
+              transition: "0.3s",
+              "&:hover": {
+                transform: "translateY(-10px) scale(1.05)",
+                boxShadow: "0 0 30px rgba(255,215,0,0.6)",
+              },
+            }}
+          >
+            <CardContent>
+              <Typography
+                variant="h5"
+                sx={{ color: "gold", fontWeight: "bold", mb: 2 }}
+              >
+                {game.title}
+              </Typography>
+
+              <Button
+                component={Link}
+                href={game.link}
+                fullWidth
+                variant="contained"
+                sx={{
+                  backgroundColor: "#8b0000",
+                  "&:hover": {
+                    backgroundColor: "#a30000",
+                  },
+                }}
+              >
+                Play Now
+              </Button>
+            </CardContent>
+          </Card>
+        ))}
+      </Stack>
+    </Box>
   );
 }
