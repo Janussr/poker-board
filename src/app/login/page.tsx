@@ -19,7 +19,7 @@ export default function LoginPage() {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        background: "radial-gradient(circle at center, #8b0000, #1a0000)",
+        // background: "radial-gradient(circle at center, #8b0000, #1a0000)",
       }}
     >
       <Card

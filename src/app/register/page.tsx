@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Box,
   Card,
@@ -8,10 +9,67 @@ import {
   TextField,
   Button,
   Link as MuiLink,
+  Alert,
 } from "@mui/material";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {
+  const router = useRouter();
+
+  const [username, setUsername] = useState("");
+  const [name, setName] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleRegister = async () => {
+    setError("");
+
+    if (!username || !name || !password) {
+      setError("All fields are required");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const response = await fetch(
+        "http://localhost:5279/api/users/register",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            username,
+            name,
+            password,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const message = await response.text();
+        throw new Error(message);
+      }
+
+      // success → redirect
+      router.push("/login");
+    } catch (err: any) {
+      setError(err.message || "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Box
       sx={{
@@ -19,7 +77,7 @@ export default function RegisterPage() {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        background: "radial-gradient(circle at center, #8b0000, #1a0000)",
+        // background: "radial-gradient(circle at center, #8b0000, #1a0000)",
       }}
     >
       <Card
@@ -43,40 +101,51 @@ export default function RegisterPage() {
             ♦ Create Account ♠
           </Typography>
 
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
+
           <TextField
             fullWidth
-            label="Name"
-            variant="outlined"
+            label="Username"
             margin="normal"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
           />
 
           <TextField
             fullWidth
-            label="Email"
-            type="email"
-            variant="outlined"
+            label="Name"
             margin="normal"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
           />
 
           <TextField
             fullWidth
             label="Password"
             type="password"
-            variant="outlined"
             margin="normal"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
           />
 
           <TextField
             fullWidth
             label="Confirm Password"
             type="password"
-            variant="outlined"
             margin="normal"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
           />
 
           <Button
             fullWidth
             variant="contained"
+            onClick={handleRegister}
+            disabled={loading}
             sx={{
               mt: 3,
               backgroundColor: "#8b0000",
@@ -84,10 +153,9 @@ export default function RegisterPage() {
                 backgroundColor: "#a30000",
               },
               fontWeight: "bold",
-              letterSpacing: "1px",
             }}
           >
-            Register
+            {loading ? "Creating Account..." : "Register"}
           </Button>
 
           <Typography sx={{ mt: 2, textAlign: "center" }}>

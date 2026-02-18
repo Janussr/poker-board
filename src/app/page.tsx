@@ -15,7 +15,7 @@ export default function HomePage() {
     <Box
       sx={{
         minHeight: "90vh",
-        background: "radial-gradient(circle at top, #8b0000, #1a0000 70%)",
+        // background: "radial-gradient(circle at top, #8b0000, #1a0000 70%)",
         color: "white",
         textAlign: "center",
         py: 10,
