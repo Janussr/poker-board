@@ -16,7 +16,7 @@ export default function PokerLayout({
           Scoreboard
         </Button>
 
-        <Button component={Link} href="/poker/scoreboard/history" variant="contained">
+        <Button component={Link} href="/poker/history" variant="contained">
           History
         </Button>
 
@@ -30,6 +30,10 @@ export default function PokerLayout({
 
         <Button component={Link} href="/poker" variant="contained">
           Cheat sheet
+        </Button>
+
+        <Button component={Link} href="/poker/game" variant="contained">
+          game
         </Button>
 
       </Stack>
