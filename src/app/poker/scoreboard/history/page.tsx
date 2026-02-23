@@ -1,88 +1,76 @@
 "use client";
 
-import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from "@mui/material";
+import { useEffect, useState } from "react";
+import { Box, Typography, Card, CardContent, Divider, List, ListItem, ListItemText } from "@mui/material";
 
-interface PlayerScore {
-  name: string;
-  scores: number[];
+const GAMES_API = "http://localhost:5279/api/games";
+
+interface Game {
+  id: number;
+  gameNumber: number;
+  endedAt?: string;
+  isFinished: boolean;
+  winner?: {
+    userId: number;
+    userName: string;
+    winningScore: number;
+    winDate: string;
+  };
 }
 
-interface PokerNight {
+interface HistoryEntry {
+  gameNumber: number;
+  winnerName: string;
+  totalScore: number;
   date: string;
-  players: PlayerScore[];
 }
-
-const dummyHistory: PokerNight[] = [
-  {
-    date: "2025-11-10",
-    players: [
-      { name: "Alice", scores: [10, 15, 20] },
-      { name: "Bob", scores: [20, 10, 15] },
-      { name: "Charlie", scores: [5, 25, 15] },
-    ],
-  },
-  {
-    date: "2025-11-03",
-    players: [
-      { name: "Alice", scores: [15, 10, 5] },
-      { name: "Bob", scores: [10, 20, 15] },
-    ],
-  },
-];
 
 export default function HistoryPage() {
-  // Funktion til at finde vinder
-  const getWinner = (players: PlayerScore[]) => {
-    if (!players || players.length === 0) return null;
-    let maxPoints = -Infinity;
-    let winner = "";
-    players.forEach((p) => {
-      const total = p.scores.reduce((a, b) => a + b, 0);
-      if (total > maxPoints) {
-        maxPoints = total;
-        winner = p.name;
-      }
-    });
-    return winner;
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+
+  useEffect(() => {
+    fetchGames();
+  }, []);
+
+  const fetchGames = async () => {
+    const res = await fetch(GAMES_API);
+    const data: Game[] = await res.json();
+
+    const finishedGames = data
+      .filter(g => g.isFinished && g.winner)
+      .map(g => ({
+        gameNumber: g.gameNumber,
+        winnerName: g.winner!.userName,
+        totalScore: g.winner!.winningScore,
+        date: g.endedAt || g.winner!.winDate,
+      }));
+
+    setHistory(finishedGames);
   };
 
   return (
-    <Box sx={{ mt: 4 }}>
-      <Typography variant="h4" gutterBottom>
-        History
+    <Box sx={{ maxWidth: 600, mx: "auto", mt: 4, px: 2 }}>
+      <Typography variant="h4" sx={{ mb: 3, textAlign: "center", fontWeight: "bold" }}>
+        📜 Game History
       </Typography>
 
-      {dummyHistory.map((night, idx) => (
-        <Box key={idx} sx={{ mb: 4 }}>
-          <Typography variant="h6">{night.date}</Typography>
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Player</TableCell>
-                  <TableCell>Scores</TableCell>
-                  <TableCell>Total</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {night.players.map((player, pIdx) => {
-                  const total = player.scores.reduce((a, b) => a + b, 0);
-                  return (
-                    <TableRow key={pIdx} sx={{ backgroundColor: getWinner(night.players) === player.name ? "#ffeb3b33" : "inherit" }}>
-                      <TableCell>{player.name}</TableCell>
-                      <TableCell>{player.scores.join(", ")}</TableCell>
-                      <TableCell>{total}</TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-            <Typography sx={{ mt: 1, ml: 1, fontStyle: "italic" }}>
-              Winner: {getWinner(night.players)}
-            </Typography>
-          </TableContainer>
-        </Box>
-      ))}
+      <Card sx={{ borderRadius: 3, boxShadow: 3 }}>
+        <CardContent>
+          <List>
+            {history.map((entry, i) => (
+              <Box key={i}>
+                <ListItem>
+                  <ListItemText
+                    primary={`Game #${entry.gameNumber} — ${entry.winnerName} — ${entry.totalScore} points`}
+                    secondary={new Date(entry.date).toLocaleString("da-DK")}
+                  />
+                </ListItem>
+                {i < history.length - 1 && <Divider />}
+              </Box>
+            ))}
+          </List>
+        </CardContent>
+      </Card>
     </Box>
   );
 }
