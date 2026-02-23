@@ -5,14 +5,36 @@ import {
   Box,
   Stack,
   Button,
-  TextField,
   Typography,
   Card,
   CardContent,
   Divider,
+  TextField,
+  MenuItem,
+  Select,
+  SelectChangeEvent,
 } from "@mui/material";
 
-const API = "http://localhost:5279/api/games";
+const GAME_API = "http://localhost:5279/api/games";
+const USERS_API = "http://localhost:5279/api/users";
+
+interface User {
+  id: number;
+  username: string;
+  name: string;
+}
+
+interface Participant {
+  userId: number;
+  userName: string;
+}
+
+interface Score {
+  id: number;
+  userId: number;
+  userName: string;
+  points: number;
+}
 
 interface Game {
   id: number;
@@ -20,78 +42,91 @@ interface Game {
   startedAt: string;
   endedAt?: string;
   isFinished: boolean;
+  participants: Participant[];
   scores: Score[];
 }
 
-interface Score {
-  id: number;
-  userId: number;
-  value: number;
-  createdAt: string;
-}
 
 export default function GamePage() {
-  const [currentGame, setCurrentGame] = useState<Game | null>(null);
   const [games, setGames] = useState<Game[]>([]);
-  const [userId, setUserId] = useState("");
-  const [scoreValue, setScoreValue] = useState("");
+  const [currentGame, setCurrentGame] = useState<Game | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState("");
+  const [scoreInputs, setScoreInputs] = useState<{ [key: number]: string }>({});
 
-  // Load all games on mount
   useEffect(() => {
     fetchGames();
+    fetchUsers();
   }, []);
 
+  const fetchUsers = async () => {
+    const res = await fetch(USERS_API);
+    const data = await res.json();
+    setUsers(data);
+  };
+
   const fetchGames = async () => {
-    const res = await fetch(API);
+    const res = await fetch(GAME_API);
     const data = await res.json();
     setGames(data);
 
     const active = data.find((g: Game) => !g.isFinished);
-    if (active) setCurrentGame(active);
+    if (active) {
+      const participants = active.participants || [];
+      const scores = active.scores || [];
+
+      setCurrentGame({ ...active, participants, scores });
+
+      const inputs: { [key: number]: string } = {};
+      participants.forEach((p: Participant) => (inputs[p.userId] = ""));
+      setScoreInputs(inputs);
+    }
   };
 
   const startGame = async () => {
-    const res = await fetch(`${API}/start`, {
+    const res = await fetch(`${GAME_API}/start`, { method: "POST" });
+    const game = await res.json();
+    setCurrentGame({ ...game, participants: [], scores: [] });
+  };
+
+  const addParticipant = async () => {
+    if (!currentGame || !selectedUserId) return;
+
+    await fetch(`${GAME_API}/${currentGame.id}/participants`, {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userIds: [Number(selectedUserId)] }),
     });
-    const data = await res.json();
-    setCurrentGame(data);
+
+    setSelectedUserId("");
     fetchGames();
   };
 
-  const addScore = async () => {
+  const addScore = async (userId: number) => {
     if (!currentGame) return;
+    const value = Number(scoreInputs[userId]);
+    if (!value) return;
 
-    await fetch(`${API}/${currentGame.id}/score`, {
+    await fetch(`${GAME_API}/${currentGame.id}/score`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        userId: Number(userId),
-        value: Number(scoreValue),
-      }),
+      body: JSON.stringify({ userId, value }),
     });
 
-    setUserId("");
-    setScoreValue("");
+    setScoreInputs({ ...scoreInputs, [userId]: "" });
     fetchGames();
   };
 
   const endGame = async () => {
     if (!currentGame) return;
-
-    await fetch(`${API}/${currentGame.id}/end`, {
-      method: "POST",
-    });
-
+    await fetch(`${GAME_API}/${currentGame.id}/end`, { method: "POST" });
     setCurrentGame(null);
     fetchGames();
   };
 
   return (
     <Box p={5}>
-      <Typography variant="h4" mb={3}>
-        🎮 Poker Game Admin
-      </Typography>
+      <Typography variant="h4" mb={3}>🎮 Poker Game Admin</Typography>
 
       {!currentGame ? (
         <Button variant="contained" onClick={startGame}>
@@ -104,68 +139,77 @@ export default function GamePage() {
               Active Game #{currentGame.gameNumber}
             </Typography>
             <Typography>
-              Started:{" "}
-              {new Date(currentGame.startedAt).toLocaleString()}
+              Started: {new Date(currentGame.startedAt).toLocaleString()}
             </Typography>
 
             <Divider sx={{ my: 2 }} />
 
-            <Stack direction="row" spacing={2}>
-              <TextField
-                label="User ID"
-                value={userId}
-                onChange={(e) => setUserId(e.target.value)}
-              />
-              <TextField
-                label="Score"
-                value={scoreValue}
-                onChange={(e) => setScoreValue(e.target.value)}
-              />
-              <Button variant="contained" onClick={addScore}>
-                Add Score
+            {/* Add participant */}
+            <Stack direction="row" spacing={2} mb={2}>
+              <Select
+                value={selectedUserId}
+                onChange={(e: SelectChangeEvent) => setSelectedUserId(e.target.value)}
+                displayEmpty
+                sx={{ minWidth: 220 }}
+              >
+                <MenuItem value="" disabled>
+                  Select Player
+                </MenuItem>
+                {users.map((u) => (
+                  <MenuItem key={u.id} value={u.id}>
+                    {u.name} ({u.username})
+                  </MenuItem>
+                ))}
+              </Select>
+
+              <Button variant="contained" onClick={addParticipant}>
+                Add Player
               </Button>
             </Stack>
 
-            <Divider sx={{ my: 2 }} />
-
-            <Typography variant="subtitle1">Scores:</Typography>
-            {currentGame.scores?.map((s) => (
-              <Typography key={s.id}>
-                User {s.userId}: {s.value}
-              </Typography>
+            {/* Participants + score inputs */}
+            <Typography variant="subtitle1">Participants</Typography>
+            {currentGame.participants.map((p) => (
+              <Stack key={p.userId} direction="row" spacing={2} alignItems="center" mb={1}>
+                <Typography sx={{ minWidth: 140 }}>{p.userName}</Typography>
+                <TextField
+                  size="small"
+                  label="Score"
+                  value={scoreInputs[p.userId] || ""}
+                  onChange={(e) =>
+                    setScoreInputs({ ...scoreInputs, [p.userId]: e.target.value })
+                  }
+                />
+                <Button variant="contained" onClick={() => addScore(p.userId)}>
+                  Add Score
+                </Button>
+              </Stack>
             ))}
 
-            <Button
-              variant="outlined"
-              color="error"
-              sx={{ mt: 2 }}
-              onClick={endGame}
-            >
+            <Divider sx={{ my: 2 }} />
+
+            {/* All score entries */}
+            <Typography variant="subtitle1">Score entries</Typography>
+           {currentGame.scores.map((s) => (
+  <Typography key={s.id}>
+    {s.userName}: {s.points}
+  </Typography>
+))}
+
+            <Button color="error" variant="outlined" sx={{ mt: 2 }} onClick={endGame}>
               End Game
             </Button>
           </CardContent>
         </Card>
       )}
 
-      <Typography variant="h5" mt={4}>
-        All Games
-      </Typography>
-
+      <Typography variant="h5" mt={4}>All Games</Typography>
       {games.map((g) => (
         <Card key={g.id} sx={{ mt: 2 }}>
           <CardContent>
             <Typography>
-              Game #{g.gameNumber} —{" "}
-              {g.isFinished ? "Finished" : "Active"}
+              Game #{g.gameNumber} — {g.isFinished ? "Finished" : "Active"}
             </Typography>
-            <Typography>
-              Started: {new Date(g.startedAt).toLocaleString()}
-            </Typography>
-            {g.endedAt && (
-              <Typography>
-                Ended: {new Date(g.endedAt).toLocaleString()}
-              </Typography>
-            )}
           </CardContent>
         </Card>
       ))}

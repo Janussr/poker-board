@@ -35,8 +35,8 @@ export default function HallOfFamePage() {
               <Box key={i}>
                 <ListItem>
                   <ListItemText
-                    primary={`${entry.winner} — ${entry.totalScore} points`}
-                    secondary={new Date(entry.date).toLocaleDateString("da-DK")}
+                    primary={`${entry.winner} — ${entry.totalScore} wins`}
+                    // secondary={new Date(entry.date).toLocaleDateString("da-DK")}
                   />
                 </ListItem>
                 {i < hallOfFameData.length - 1 && <Divider />}
