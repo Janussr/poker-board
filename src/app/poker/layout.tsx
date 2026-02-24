@@ -12,7 +12,7 @@ export default function PokerLayout({
   return (
     <Box>
       <Stack spacing={2} direction="row" justifyContent="center" mt={5}>
-        <Button component={Link} href="/poker/games" variant="contained">
+        <Button component={Link} href="/poker/active-game" variant="contained">
           Join game
         </Button>
 

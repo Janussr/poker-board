@@ -47,7 +47,7 @@ interface Game {
 }
 
 
-export default function GamePage() {
+export default function SetupGamePage() {
   const [games, setGames] = useState<Game[]>([]);
   const [currentGame, setCurrentGame] = useState<Game | null>(null);
   const [users, setUsers] = useState<User[]>([]);
