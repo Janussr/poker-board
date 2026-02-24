@@ -91,7 +91,7 @@ export default function GameHistoryPage() {
                       secondary={`${new Date(entry.date).toLocaleString("da-DK")} • ${entry.playerCount} spillere`}
                     />
 
-                    <Link href={`/poker/game-details/${entry.id}`} passHref>
+                    <Link href={`/poker/game-results/${entry.id}`} passHref>
                       <Button variant="outlined" size="small">
                         Se scoreboard
                       </Button>

@@ -27,7 +27,7 @@ interface GameDetails {
   winner?: Winner | null;
 }
 
-export default function GameDetailsPage() {
+export default function GameResultspage() {
   const params = useParams();
   const gameId = Number(params.gameId);
 
