@@ -12,28 +12,24 @@ export default function PokerLayout({
   return (
     <Box>
       <Stack spacing={2} direction="row" justifyContent="center" mt={5}>
-        <Button component={Link} href="/poker/scoreboard" variant="contained">
-          Scoreboard
+        <Button component={Link} href="/poker/games" variant="contained">
+          Join game
         </Button>
 
-        <Button component={Link} href="/poker/history" variant="contained">
-          History
+        <Button component={Link} href="/poker/game-history" variant="contained">
+          Game history
         </Button>
 
-        <Button component={Link} href="/poker/players" variant="contained">
-          Players
+        <Button component={Link} href="/poker" variant="contained">
+         Poker hand ranking
         </Button>
 
         <Button component={Link} href="/poker/hall-of-fame" variant="contained">
           Hall of Fame
         </Button>
 
-        <Button component={Link} href="/poker" variant="contained">
-          Cheat sheet
-        </Button>
-
-        <Button component={Link} href="/poker/game" variant="contained">
-          game
+        <Button component={Link} href="/poker/setup-game" variant="contained">
+          Setup game
         </Button>
 
       </Stack>

@@ -68,11 +68,11 @@ export default function RoulettePage() {
           Rules
         </Typography>
         <ul>
-          <li>Spillere placerer deres indsatser på bordet før kuglen sættes i spil.</li>
-          <li>Dealeren (croupieren) spinner hjulet og kaster kuglen i modsatte retning.</li>
-          <li>Før kuglen lander i et nummer, lukkes for flere bets.</li>
-          <li>Vindende indsatser udbetales efter den fastsatte odds.</li>
-          <li>Tabende indsatser fjernes fra bordet.</li>
+          <li>Spillere placerer deres bets på bordet før kuglen sættes i spil.</li>
+          <li>Croupieren spinner hjulet og kaster kuglen i modsatte retning.</li>
+          <li>Før kuglen lander i et nummer, lukkes der for bets.</li>
+          <li>Vindende bets udbetales efter den fastsatte odds.</li>
+          <li>Tabende bets fjernes fra bordet.</li>
         </ul>
       </Box>
       )}

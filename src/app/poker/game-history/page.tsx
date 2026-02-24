@@ -1,7 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Box, Typography, Card, CardContent, Divider, List, ListItem, ListItemText } from "@mui/material";
+import Link from "next/link";
+import {
+  Box,
+  Typography,
+  Card,
+  CardContent,
+  Divider,
+  List,
+  ListItem,
+  ListItemText,
+  Button,
+  Stack,
+} from "@mui/material";
 
 const GAMES_API = "http://localhost:5279/api/games";
 
@@ -10,6 +22,7 @@ interface Game {
   gameNumber: number;
   endedAt?: string;
   isFinished: boolean;
+  participants: { userId: number; userName: string }[];
   winner?: {
     userId: number;
     userName: string;
@@ -19,13 +32,15 @@ interface Game {
 }
 
 interface HistoryEntry {
+  id: number;
   gameNumber: number;
   winnerName: string;
   totalScore: number;
   date: string;
+  playerCount: number;
 }
 
-export default function HistoryPage() {
+export default function GameHistoryPage() {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
 
   useEffect(() => {
@@ -39,18 +54,23 @@ export default function HistoryPage() {
     const finishedGames = data
       .filter(g => g.isFinished && g.winner)
       .map(g => ({
+        id: g.id,
         gameNumber: g.gameNumber,
         winnerName: g.winner!.userName,
         totalScore: g.winner!.winningScore,
         date: g.endedAt || g.winner!.winDate,
+        playerCount: g.participants.length ?? 0,
       }));
 
     setHistory(finishedGames);
   };
 
   return (
-    <Box sx={{ maxWidth: 600, mx: "auto", mt: 4, px: 2 }}>
-      <Typography variant="h4" sx={{ mb: 3, textAlign: "center", fontWeight: "bold" }}>
+    <Box sx={{ maxWidth: 700, mx: "auto", mt: 4, px: 2 }}>
+      <Typography
+        variant="h4"
+        sx={{ mb: 3, textAlign: "center", fontWeight: "bold" }}
+      >
         📜 Game History
       </Typography>
 
@@ -58,13 +78,27 @@ export default function HistoryPage() {
         <CardContent>
           <List>
             {history.map((entry, i) => (
-              <Box key={i}>
+              <Box key={entry.id}>
                 <ListItem>
-                  <ListItemText
-                    primary={`Game #${entry.gameNumber} — ${entry.winnerName} — ${entry.totalScore} points`}
-                    secondary={new Date(entry.date).toLocaleString("da-DK")}
-                  />
+                  <Stack
+                    direction="row"
+                    justifyContent="space-between"
+                    alignItems="center"
+                    width="100%"
+                  >
+                    <ListItemText
+                      primary={`Game #${entry.gameNumber} — ${entry.winnerName} — ${entry.totalScore} pts`}
+                      secondary={`${new Date(entry.date).toLocaleString("da-DK")} • ${entry.playerCount} spillere`}
+                    />
+
+                    <Link href={`/poker/game-details/${entry.id}`} passHref>
+                      <Button variant="outlined" size="small">
+                        Se scoreboard
+                      </Button>
+                    </Link>
+                  </Stack>
                 </ListItem>
+
                 {i < history.length - 1 && <Divider />}
               </Box>
             ))}
