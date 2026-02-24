@@ -147,6 +147,14 @@ export default function AdminPanelPage() {
     }
   };
 
+  const handleRemovePlayer = async (gameId: number, userId: number) => {
+    const res = await fetch(`${GAME_API}/${gameId}/participants/${userId}`, { method: "DELETE" });
+    if (!res.ok) return alert("Kunne ikke fjerne spiller");
+
+    const updatedParticipants: Participant[] = await res.json();
+    setCurrentGame(prev => prev ? { ...prev, participants: updatedParticipants } : prev);
+  };
+
   return (
     <Box p={5}>
       <Typography variant="h4" mb={3}>🎮 Poker Game Admin</Typography>
@@ -203,6 +211,10 @@ export default function AdminPanelPage() {
                 />
                 <Button variant="contained" onClick={() => addScore(p.userId)}>
                   Add Score
+                </Button>
+
+                <Button variant="outlined" color="error" onClick={() => handleRemovePlayer(currentGame.id, p.userId)}>
+                  Remove
                 </Button>
               </Stack>
             ))}
