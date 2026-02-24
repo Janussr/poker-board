@@ -168,18 +168,23 @@ export default function ActiveGamePlayerPage() {
                   type="number"
                   value={points}
                   onChange={(e) => setPoints(e.target.value)}
+                  disabled={currentGame?.isFinished} 
                   sx={{
                     "& input[type=number]::-webkit-outer-spin-button, & input[type=number]::-webkit-inner-spin-button": {
                       WebkitAppearance: "none",
                       margin: 0,
                     },
                     "& input[type=number]": {
-                      MozAppearance: "textfield", // Firefox
+                      MozAppearance: "textfield",
                     },
                   }}
                 />
 
-                <Button variant="contained" onClick={submitScore}>
+                <Button
+                  variant="contained"
+                  onClick={submitScore}
+                  disabled={currentGame?.isFinished} 
+                >
                   Tilføj points
                 </Button>
 

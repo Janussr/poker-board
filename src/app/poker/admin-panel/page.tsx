@@ -14,6 +14,8 @@ import {
   Select,
   SelectChangeEvent,
 } from "@mui/material";
+import Link from "next/link";
+import router from "next/router";
 
 const GAME_API = "http://localhost:5279/api/games";
 const USERS_API = "http://localhost:5279/api/users";
@@ -47,12 +49,13 @@ interface Game {
 }
 
 
-export default function SetupGamePage() {
+export default function AdminPanelPage() {
   const [games, setGames] = useState<Game[]>([]);
   const [currentGame, setCurrentGame] = useState<Game | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUserId, setSelectedUserId] = useState("");
   const [scoreInputs, setScoreInputs] = useState<{ [key: number]: string }>({});
+  const [hasJoined, setHasJoined] = useState(false);
 
   useEffect(() => {
     fetchGames();
@@ -89,19 +92,6 @@ export default function SetupGamePage() {
     setCurrentGame({ ...game, participants: [], scores: [] });
   };
 
-  const addParticipant = async () => {
-    if (!currentGame || !selectedUserId) return;
-
-    await fetch(`${GAME_API}/${currentGame.id}/participants`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userIds: [Number(selectedUserId)] }),
-    });
-
-    setSelectedUserId("");
-    fetchGames();
-  };
-
   const addScore = async (userId: number) => {
     if (!currentGame) return;
     const value = Number(scoreInputs[userId]);
@@ -117,11 +107,44 @@ export default function SetupGamePage() {
     fetchGames();
   };
 
-  const endGame = async () => {
+  const endOrCancelGame = async () => {
     if (!currentGame) return;
-    await fetch(`${GAME_API}/${currentGame.id}/end`, { method: "POST" });
+
+    const endpoint =
+      currentGame.scores.length === 0
+        ? `${GAME_API}/${currentGame.id}/cancel`
+        : `${GAME_API}/${currentGame.id}/end`;
+
+    const res = await fetch(endpoint, { method: "POST" });
+
+    if (!res.ok) {
+      const err = await res.json();
+      alert(err.message || "Noget gik galt");
+      return;
+    }
     setCurrentGame(null);
     fetchGames();
+  };
+
+  const handleSelectUser = async (e: SelectChangeEvent) => {
+    const userId = e.target.value;
+    setSelectedUserId(userId);
+
+    if (!currentGame || !userId) return;
+
+    try {
+      await fetch(`${GAME_API}/${currentGame.id}/participants`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userIds: [Number(userId)] }),
+      });
+
+      setSelectedUserId("");
+      fetchGames();
+      setHasJoined(true);
+    } catch (error) {
+      console.error("Failed to add participant:", error);
+    }
   };
 
   return (
@@ -148,23 +171,21 @@ export default function SetupGamePage() {
             <Stack direction="row" spacing={2} mb={2}>
               <Select
                 value={selectedUserId}
-                onChange={(e: SelectChangeEvent) => setSelectedUserId(e.target.value)}
                 displayEmpty
+                onChange={handleSelectUser}
                 sx={{ minWidth: 220 }}
               >
                 <MenuItem value="" disabled>
-                  Select Player
+                  Vælg spiller
                 </MenuItem>
-                {users.map((u) => (
-                  <MenuItem key={u.id} value={u.id}>
-                    {u.name} ({u.username})
-                  </MenuItem>
-                ))}
+                {users
+                  .filter((u) => !currentGame?.participants.some((p) => p.userId === u.id))
+                  .map((u) => (
+                    <MenuItem key={u.id} value={u.id}>
+                      {u.name} ({u.username})
+                    </MenuItem>
+                  ))}
               </Select>
-
-              <Button variant="contained" onClick={addParticipant}>
-                Add Player
-              </Button>
             </Stack>
 
             {/* Participants + score inputs */}
@@ -190,14 +211,17 @@ export default function SetupGamePage() {
 
             {/* All score entries */}
             <Typography variant="subtitle1">Score entries</Typography>
-           {currentGame.scores.map((s) => (
-  <Typography key={s.id}>
-    {s.userName}: {s.points}
-  </Typography>
-))}
-
-            <Button color="error" variant="outlined" sx={{ mt: 2 }} onClick={endGame}>
-              End Game
+            {currentGame.scores.map((s) => (
+              <Typography key={s.id}>
+                {s.userName}: {s.points}
+              </Typography>
+            ))}
+            <Button
+              color={currentGame.scores.length === 0 ? "warning" : "error"}
+              variant="contained"
+              onClick={endOrCancelGame}
+            >
+              {currentGame.scores.length === 0 ? "Annullér spil" : "Afslut spil"}
             </Button>
           </CardContent>
         </Card>
@@ -210,6 +234,11 @@ export default function SetupGamePage() {
             <Typography>
               Game #{g.gameNumber} — {g.isFinished ? "Finished" : "Active"}
             </Typography>
+            <Link href={`/poker/game-results/${g.id}`} passHref>
+              <Button variant="outlined" size="small">
+                Se scoreboard
+              </Button>
+            </Link>
           </CardContent>
         </Card>
       ))}

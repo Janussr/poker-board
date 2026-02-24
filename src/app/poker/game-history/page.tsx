@@ -92,7 +92,7 @@ export default function GameHistoryPage() {
                     />
 
                     <Link href={`/poker/game-results/${entry.id}`} passHref>
-                      <Button variant="outlined" size="small">
+                      <Button variant="outlined" size="small" >
                         Se scoreboard
                       </Button>
                     </Link>

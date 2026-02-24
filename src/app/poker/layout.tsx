@@ -28,8 +28,8 @@ export default function PokerLayout({
           Hall of Fame
         </Button>
 
-        <Button component={Link} href="/poker/setup-game" variant="contained">
-          Setup game
+        <Button component={Link} href="/poker/admin-panel" variant="contained">
+          Admin panel
         </Button>
 
       </Stack>
