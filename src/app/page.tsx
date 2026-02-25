@@ -122,7 +122,7 @@ export default function HomePage() {
                   },
                 }}
               >
-                Play Now
+                Join
               </Button>
             </CardContent>
           </Card>

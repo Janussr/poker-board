@@ -11,6 +11,7 @@ interface Score {
   userName: string;
   points: number;
   createdAt: string;
+  totalPoints: number;
 }
 
 interface Winner {
@@ -88,6 +89,12 @@ export default function GameResultspage() {
     setPlayerScores(null);
   };
 
+  const capitalize = (name: string) => {
+    if (!name) return "";
+    const trimmed = name.trim();
+    return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+  };
+
   if (loading) return <Typography sx={{ textAlign: "center", mt: 4 }}>Loading game...</Typography>;
   if (!game) return <Typography sx={{ textAlign: "center", mt: 4 }}>Game not found</Typography>;
 
@@ -105,9 +112,10 @@ export default function GameResultspage() {
       <Card sx={{ borderRadius: 3, boxShadow: 3 }}>
         <CardContent>
           {game.scores?.slice()
-            .sort((a, b) => b.points - a.points)
+            .sort((a, b) => b.totalPoints - a.totalPoints)
             .map((s, idx) => {
               const isWinner = game.winner?.userId === s.userId;
+
               return (
                 <Box key={`${s.id ?? idx}-${s.userId}`}>
                   <Stack
@@ -116,11 +124,34 @@ export default function GameResultspage() {
                     alignItems="center"
                     sx={{ py: 1, px: 2, borderRadius: 1 }}
                   >
-                    <Button onClick={() => openPlayerModal(s.userId)} sx={{ fontWeight: isWinner ? "bold" : "normal" }}>
-                      {s.userName}
-                    </Button>
+                    {/* Left side: placement number + name */}
+                    <Stack direction="row" alignItems="center" spacing={2}>
+                      <Typography
+                        sx={{
+                          minWidth: 24,
+                          textAlign: "right",
+                          fontWeight: "bold",
+                          color: "text.secondary",
+                        }}
+                      >
+                        {idx + 1}.
+                      </Typography>
+
+                      <Button
+                        onClick={() => openPlayerModal(s.userId)}
+                        sx={{
+                          // fontWeight: isWinner ? "bold" : "normal",
+                          textTransform: "none",
+                          p: 0,
+                          minWidth: 0,
+                        }}
+                      >
+                        {capitalize(s.userName)}
+                      </Button>
+                    </Stack>
+
                     <Typography sx={{ fontWeight: isWinner ? "bold" : "normal" }}>
-                      {s.points} pts
+                      {s.totalPoints} points
                     </Typography>
                   </Stack>
                   <Divider />
