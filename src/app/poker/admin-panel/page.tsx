@@ -74,13 +74,13 @@ export default function AdminPanelPage() {
   // };
 
   const fetchUsers = async () => {
-  try {
-    const data = await getAllUsers();
-    setUsers(data);
-  } catch (err) {
-    console.error(err);
-  }
-};
+    try {
+      const data = await getAllUsers();
+      setUsers(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   // const fetchGames = async () => {
   //   const res = await fetch(GAME_API);
@@ -101,24 +101,24 @@ export default function AdminPanelPage() {
   // };
 
   const fetchGames = async () => {
-  try {
-    const data = await getAllGames();
-    setGames(data);
+    try {
+      const data = await getAllGames();
+      setGames(data);
 
-    const active = data.find(g => !g.isFinished);
-    if (active) {
-      const participants = active.participants || [];
-      const scores = active.scores || [];
-      setCurrentGame({ ...active, participants, scores });
+      const active = data.find(g => !g.isFinished);
+      if (active) {
+        const participants = active.participants || [];
+        const scores = active.scores || [];
+        setCurrentGame({ ...active, participants, scores });
 
-      const inputs: { [key: number]: string } = {};
-      participants.forEach(p => (inputs[p.userId] = ""));
-      setScoreInputs(inputs);
+        const inputs: { [key: number]: string } = {};
+        participants.forEach(p => (inputs[p.userId] = ""));
+        setScoreInputs(inputs);
+      }
+    } catch (err) {
+      console.error(err);
     }
-  } catch (err) {
-    console.error(err);
-  }
-};
+  };
 
   // const startGame = async () => {
   //   const res = await fetch(`${GAME_API}/start`, { method: "POST" });
@@ -127,13 +127,13 @@ export default function AdminPanelPage() {
   // };
 
   const startGameHandler = async () => {
-  try {
-    const game = await startGame();
-    setCurrentGame({ ...game, participants: [], scores: [] });
-  } catch (err) {
-    console.error(err);
-  }
-};
+    try {
+      const game = await startGame();
+      setCurrentGame({ ...game, participants: [], scores: [] });
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   // const addScore = async (userId: number) => {
   //   if (!currentGame) return;
@@ -151,18 +151,18 @@ export default function AdminPanelPage() {
   // };
 
   const addScoreHandler = async (userId: number) => {
-  if (!currentGame) return;
-  const value = Number(scoreInputs[userId]);
-  if (!value) return;
+    if (!currentGame) return;
+    const value = Number(scoreInputs[userId]);
+    if (!value) return;
 
-  try {
-    await addScore(currentGame.id, userId, value);
-    setScoreInputs({ ...scoreInputs, [userId]: "" });
-    fetchGames();
-  } catch (err) {
-    console.error(err);
-  }
-};
+    try {
+      await addScore(currentGame.id, userId, value);
+      setScoreInputs({ ...scoreInputs, [userId]: "" });
+      fetchGames();
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   // const endOrCancelGame = async () => {
   //   if (!currentGame) return;
@@ -184,20 +184,20 @@ export default function AdminPanelPage() {
   // };
 
   const endOrCancelGame = async () => {
-  if (!currentGame) return;
+    if (!currentGame) return;
 
-  try {
-    if (currentGame.scores.length === 0) {
-      await cancelGame(currentGame.id);
-    } else {
-      await endGame(currentGame.id);
+    try {
+      if (currentGame.scores.length === 0) {
+        await cancelGame(currentGame.id);
+      } else {
+        await endGame(currentGame.id);
+      }
+      setCurrentGame(null);
+      fetchGames();
+    } catch (err: any) {
+      alert(err.message || "Noget gik galt");
     }
-    setCurrentGame(null);
-    fetchGames();
-  } catch (err: any) {
-    alert(err.message || "Noget gik galt");
-  }
-};
+  };
 
   // const handleSelectUser = async (e: SelectChangeEvent) => {
   //   const userId = e.target.value;
@@ -221,20 +221,20 @@ export default function AdminPanelPage() {
   // };
 
   const handleSelectUser = async (e: SelectChangeEvent) => {
-  const userId = Number(e.target.value);
-  setSelectedUserId(String(userId));
+    const userId = Number(e.target.value);
+    setSelectedUserId(String(userId));
 
-  if (!currentGame || !userId) return;
+    if (!currentGame || !userId) return;
 
-  try {
-    await addParticipants(currentGame.id, [userId]);
-    setSelectedUserId("");
-    fetchGames();
-    setHasJoined(true);
-  } catch (err) {
-    console.error("Failed to add participant:", err);
-  }
-};
+    try {
+      await addParticipants(currentGame.id, [userId]);
+      setSelectedUserId("");
+      fetchGames();
+      setHasJoined(true);
+    } catch (err) {
+      console.error("Failed to add participant:", err);
+    }
+  };
 
   // const handleRemovePlayer = async (gameId: number, userId: number) => {
   //   const res = await fetch(`${GAME_API}/${gameId}/participants/${userId}`, { method: "DELETE" });
@@ -245,13 +245,13 @@ export default function AdminPanelPage() {
   // };
 
   const handleRemovePlayer = async (gameId: number, userId: number) => {
-  try {
-    const updatedParticipants = await removeParticipant(gameId, userId);
-    setCurrentGame(prev => prev ? { ...prev, participants: updatedParticipants } : prev);
-  } catch (err) {
-    alert("Kunne ikke fjerne spiller");
-  }
-};
+    try {
+      const updatedParticipants = await removeParticipant(gameId, userId);
+      setCurrentGame(prev => prev ? { ...prev, participants: updatedParticipants } : prev);
+    } catch (err) {
+      alert("Kunne ikke fjerne spiller");
+    }
+  };
 
   return (
     <Box p={5}>
@@ -336,22 +336,24 @@ export default function AdminPanelPage() {
           </CardContent>
         </Card>
       )}
-
+      
       <Typography variant="h5" mt={4}>All Games</Typography>
-      {games.map((g) => (
-        <Card key={g.id} sx={{ mt: 2 }}>
-          <CardContent>
-            <Typography>
-              Game #{g.gameNumber} — {g.isFinished ? "Finished" : "Active"}
-            </Typography>
-            <Link href={`/poker/game-results/${g.id}`} passHref>
-              <Button variant="outlined" size="small">
-                Se scoreboard
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-      ))}
+      {[...games]
+        .sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())
+        .map((g) => (
+          <Card key={g.id} sx={{ mt: 2 }}>
+            <CardContent>
+              <Typography>
+                Game #{g.gameNumber} — {g.isFinished ? "Finished" : "Active"}
+              </Typography>
+              <Link href={`/poker/game-results/${g.id}`} passHref>
+                <Button variant="outlined" size="small">
+                  View scoreboard
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        ))}
     </Box>
   );
 }
