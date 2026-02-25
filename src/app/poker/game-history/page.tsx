@@ -14,56 +14,48 @@ import {
   Button,
   Stack,
 } from "@mui/material";
+import { getAllGames } from "@/lib/api/games";
+import { GameDetails, HistoryEntry, Game } from "@/lib/models/game";
 
-const GAMES_API = "http://localhost:5279/api/games";
-
-interface Game {
-  id: number;
-  gameNumber: number;
-  endedAt?: string;
-  isFinished: boolean;
-  participants: { userId: number; userName: string }[];
-  winner?: {
-    userId: number;
-    userName: string;
-    winningScore: number;
-    winDate: string;
-  };
-}
-
-interface HistoryEntry {
-  id: number;
-  gameNumber: number;
-  winnerName: string;
-  totalScore: number;
-  date: string;
-  playerCount: number;
-}
 
 export default function GameHistoryPage() {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
+const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchGames();
   }, []);
 
-  const fetchGames = async () => {
-    const res = await fetch(GAMES_API);
-    const data: Game[] = await res.json();
+    const fetchGames = async () => {
+    setLoading(true);
+    try {
+      const games: Game[] = await getAllGames();
 
-    const finishedGames = data
-      .filter(g => g.isFinished && g.winner)
-      .map(g => ({
-        id: g.id,
-        gameNumber: g.gameNumber,
-        winnerName: g.winner!.userName,
-        totalScore: g.winner!.winningScore,
-        date: g.endedAt || g.winner!.winDate,
-        playerCount: g.participants.length ?? 0,
-      }));
+      const finishedGames = games
+        .filter(g => g.isFinished && g.winner)
+        .map(g => ({
+          id: g.id,
+          gameNumber: g.gameNumber,
+          winnerName: g.winner!.userName,
+          totalScore: g.winner!.winningScore,
+          date: g.endedAt || g.winner!.winDate,
+          playerCount: g.participants?.length ?? 0,
+        }))
+        .sort((a, b) => b.date.localeCompare(a.date)); 
 
-    setHistory(finishedGames);
+      setHistory(finishedGames);
+    } catch (err) {
+      console.error("Failed to fetch game history:", err);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  if (loading)
+    return (
+      <Typography sx={{ textAlign: "center", mt: 4 }}>Loading history...</Typography>
+    );
+
 
   return (
     <Box sx={{ maxWidth: 700, mx: "auto", mt: 4, px: 2 }}>

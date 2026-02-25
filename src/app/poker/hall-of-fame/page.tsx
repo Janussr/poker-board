@@ -14,28 +14,34 @@ import {
   Stack,
   CircularProgress,
 } from "@mui/material";
+import { HallOfFameEntry } from "@/lib/models/game";
+import { getHallOfFame } from "@/lib/api/games";
 
-const HALL_OF_FAME_API = "http://localhost:5279/api/halloffame";
+// const HALL_OF_FAME_API = "http://localhost:5279/api/halloffame";
 
-interface HallOfFameEntry {
-  playerName: string;
-  wins: number;
-}
+// interface HallOfFameEntry {
+//   playerName: string;
+//   wins: number;
+// }
 
 export default function HallOfFamePage() {
   const [hallOfFame, setHallOfFame] = useState<HallOfFameEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchHallOfFame();
-  }, []);
+    const fetchData = async () => {
+      try {
+        const data = await getHallOfFame();
+        setHallOfFame(data);
+      } catch (err) {
+        console.error("Failed to fetch Hall of Fame:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const fetchHallOfFame = async () => {
-    const res = await fetch(HALL_OF_FAME_API);
-    const data = await res.json();
-    setHallOfFame(data);
-    setLoading(false);
-  };
+    fetchData();
+  }, []);
 
   const getMedal = (index: number) => {
     if (index === 0) return "🥇";

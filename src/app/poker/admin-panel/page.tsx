@@ -16,37 +16,42 @@ import {
 } from "@mui/material";
 import Link from "next/link";
 import router from "next/router";
+import { getAllGames, cancelGame, startGame, endGame, addParticipants, removeParticipant, addScore } from "@/lib/api/games";
+import { getAllUsers } from "@/lib/api/users";
+import { Score } from "@/lib/models/score";
+import { Game, Participant } from "@/lib/models/game";
+import { User } from "@/lib/models/user"
 
-const GAME_API = "http://localhost:5279/api/games";
-const USERS_API = "http://localhost:5279/api/users";
+// const GAME_API = "http://localhost:5279/api/games";
+// const USERS_API = "http://localhost:5279/api/users";
 
-interface User {
-  id: number;
-  username: string;
-  name: string;
-}
+// interface User {
+//   id: number;
+//   username: string;
+//   name: string;
+// }
 
-interface Participant {
-  userId: number;
-  userName: string;
-}
+// interface Participant {
+//   userId: number;
+//   userName: string;
+// }
 
-interface Score {
-  id: number;
-  userId: number;
-  userName: string;
-  points: number;
-}
+// interface Score {
+//   id: number;
+//   userId: number;
+//   userName: string;
+//   points: number;
+// }
 
-interface Game {
-  id: number;
-  gameNumber: number;
-  startedAt: string;
-  endedAt?: string;
-  isFinished: boolean;
-  participants: Participant[];
-  scores: Score[];
-}
+// interface Game {
+//   id: number;
+//   gameNumber: number;
+//   startedAt: string;
+//   endedAt?: string;
+//   isFinished: boolean;
+//   participants: Participant[];
+//   scores: Score[];
+// }
 
 
 export default function AdminPanelPage() {
@@ -62,105 +67,198 @@ export default function AdminPanelPage() {
     fetchUsers();
   }, []);
 
+  // const fetchUsers = async () => {
+  //   const res = await fetch(USERS_API);
+  //   const data = await res.json();
+  //   setUsers(data);
+  // };
+
   const fetchUsers = async () => {
-    const res = await fetch(USERS_API);
-    const data = await res.json();
+  try {
+    const data = await getAllUsers();
     setUsers(data);
-  };
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+  // const fetchGames = async () => {
+  //   const res = await fetch(GAME_API);
+  //   const data = await res.json();
+  //   setGames(data);
+
+  //   const active = data.find((g: Game) => !g.isFinished);
+  //   if (active) {
+  //     const participants = active.participants || [];
+  //     const scores = active.scores || [];
+
+  //     setCurrentGame({ ...active, participants, scores });
+
+  //     const inputs: { [key: number]: string } = {};
+  //     participants.forEach((p: Participant) => (inputs[p.userId] = ""));
+  //     setScoreInputs(inputs);
+  //   }
+  // };
 
   const fetchGames = async () => {
-    const res = await fetch(GAME_API);
-    const data = await res.json();
+  try {
+    const data = await getAllGames();
     setGames(data);
 
-    const active = data.find((g: Game) => !g.isFinished);
+    const active = data.find(g => !g.isFinished);
     if (active) {
       const participants = active.participants || [];
       const scores = active.scores || [];
-
       setCurrentGame({ ...active, participants, scores });
 
       const inputs: { [key: number]: string } = {};
-      participants.forEach((p: Participant) => (inputs[p.userId] = ""));
+      participants.forEach(p => (inputs[p.userId] = ""));
       setScoreInputs(inputs);
     }
-  };
+  } catch (err) {
+    console.error(err);
+  }
+};
 
-  const startGame = async () => {
-    const res = await fetch(`${GAME_API}/start`, { method: "POST" });
-    const game = await res.json();
+  // const startGame = async () => {
+  //   const res = await fetch(`${GAME_API}/start`, { method: "POST" });
+  //   const game = await res.json();
+  //   setCurrentGame({ ...game, participants: [], scores: [] });
+  // };
+
+  const startGameHandler = async () => {
+  try {
+    const game = await startGame();
     setCurrentGame({ ...game, participants: [], scores: [] });
-  };
+  } catch (err) {
+    console.error(err);
+  }
+};
 
-  const addScore = async (userId: number) => {
-    if (!currentGame) return;
-    const value = Number(scoreInputs[userId]);
-    if (!value) return;
+  // const addScore = async (userId: number) => {
+  //   if (!currentGame) return;
+  //   const value = Number(scoreInputs[userId]);
+  //   if (!value) return;
 
-    await fetch(`${GAME_API}/${currentGame.id}/score`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId, value }),
-    });
+  //   await fetch(`${GAME_API}/${currentGame.id}/score`, {
+  //     method: "POST",
+  //     headers: { "Content-Type": "application/json" },
+  //     body: JSON.stringify({ userId, value }),
+  //   });
 
+  //   setScoreInputs({ ...scoreInputs, [userId]: "" });
+  //   fetchGames();
+  // };
+
+  const addScoreHandler = async (userId: number) => {
+  if (!currentGame) return;
+  const value = Number(scoreInputs[userId]);
+  if (!value) return;
+
+  try {
+    await addScore(currentGame.id, userId, value);
     setScoreInputs({ ...scoreInputs, [userId]: "" });
     fetchGames();
-  };
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+  // const endOrCancelGame = async () => {
+  //   if (!currentGame) return;
+
+  //   const endpoint =
+  //     currentGame.scores.length === 0
+  //       ? `${GAME_API}/${currentGame.id}/cancel`
+  //       : `${GAME_API}/${currentGame.id}/end`;
+
+  //   const res = await fetch(endpoint, { method: "POST" });
+
+  //   if (!res.ok) {
+  //     const err = await res.json();
+  //     alert(err.message || "Noget gik galt");
+  //     return;
+  //   }
+  //   setCurrentGame(null);
+  //   fetchGames();
+  // };
 
   const endOrCancelGame = async () => {
-    if (!currentGame) return;
+  if (!currentGame) return;
 
-    const endpoint =
-      currentGame.scores.length === 0
-        ? `${GAME_API}/${currentGame.id}/cancel`
-        : `${GAME_API}/${currentGame.id}/end`;
-
-    const res = await fetch(endpoint, { method: "POST" });
-
-    if (!res.ok) {
-      const err = await res.json();
-      alert(err.message || "Noget gik galt");
-      return;
+  try {
+    if (currentGame.scores.length === 0) {
+      await cancelGame(currentGame.id);
+    } else {
+      await endGame(currentGame.id);
     }
     setCurrentGame(null);
     fetchGames();
-  };
+  } catch (err: any) {
+    alert(err.message || "Noget gik galt");
+  }
+};
+
+  // const handleSelectUser = async (e: SelectChangeEvent) => {
+  //   const userId = e.target.value;
+  //   setSelectedUserId(userId);
+
+  //   if (!currentGame || !userId) return;
+
+  //   try {
+  //     await fetch(`${GAME_API}/${currentGame.id}/participants`, {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ userIds: [Number(userId)] }),
+  //     });
+
+  //     setSelectedUserId("");
+  //     fetchGames();
+  //     setHasJoined(true);
+  //   } catch (error) {
+  //     console.error("Failed to add participant:", error);
+  //   }
+  // };
 
   const handleSelectUser = async (e: SelectChangeEvent) => {
-    const userId = e.target.value;
-    setSelectedUserId(userId);
+  const userId = Number(e.target.value);
+  setSelectedUserId(String(userId));
 
-    if (!currentGame || !userId) return;
+  if (!currentGame || !userId) return;
 
-    try {
-      await fetch(`${GAME_API}/${currentGame.id}/participants`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userIds: [Number(userId)] }),
-      });
+  try {
+    await addParticipants(currentGame.id, [userId]);
+    setSelectedUserId("");
+    fetchGames();
+    setHasJoined(true);
+  } catch (err) {
+    console.error("Failed to add participant:", err);
+  }
+};
 
-      setSelectedUserId("");
-      fetchGames();
-      setHasJoined(true);
-    } catch (error) {
-      console.error("Failed to add participant:", error);
-    }
-  };
+  // const handleRemovePlayer = async (gameId: number, userId: number) => {
+  //   const res = await fetch(`${GAME_API}/${gameId}/participants/${userId}`, { method: "DELETE" });
+  //   if (!res.ok) return alert("Kunne ikke fjerne spiller");
+
+  //   const updatedParticipants: Participant[] = await res.json();
+  //   setCurrentGame(prev => prev ? { ...prev, participants: updatedParticipants } : prev);
+  // };
 
   const handleRemovePlayer = async (gameId: number, userId: number) => {
-    const res = await fetch(`${GAME_API}/${gameId}/participants/${userId}`, { method: "DELETE" });
-    if (!res.ok) return alert("Kunne ikke fjerne spiller");
-
-    const updatedParticipants: Participant[] = await res.json();
+  try {
+    const updatedParticipants = await removeParticipant(gameId, userId);
     setCurrentGame(prev => prev ? { ...prev, participants: updatedParticipants } : prev);
-  };
+  } catch (err) {
+    alert("Kunne ikke fjerne spiller");
+  }
+};
 
   return (
     <Box p={5}>
       <Typography variant="h4" mb={3}>🎮 Poker Game Admin</Typography>
 
       {!currentGame ? (
-        <Button variant="contained" onClick={startGame}>
+        <Button variant="contained" onClick={startGameHandler}>
           Start New Game
         </Button>
       ) : (
@@ -209,7 +307,7 @@ export default function AdminPanelPage() {
                     setScoreInputs({ ...scoreInputs, [p.userId]: e.target.value })
                   }
                 />
-                <Button variant="contained" onClick={() => addScore(p.userId)}>
+                <Button variant="contained" onClick={() => addScoreHandler(p.userId)}>
                   Add Score
                 </Button>
 

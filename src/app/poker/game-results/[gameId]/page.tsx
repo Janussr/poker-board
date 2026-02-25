@@ -5,38 +5,9 @@ import { useParams } from "next/navigation";
 import { Box, Typography, Card, CardContent, Stack, Divider, Button, Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
 import { useRouter } from "next/navigation";
 
-interface Score {
-  id: number;
-  userId: number;
-  userName: string;
-  points: number;
-  createdAt: string;
-  totalPoints: number;
-}
+import { getGameDetails, getPlayerScoreDetails } from "@/lib/api/games";
+import { GameDetails, PlayerScoreDetails } from "@/lib/models/game";
 
-interface Winner {
-  userId: number;
-  userName: string;
-  winningScore: number;
-  winDate: string;
-}
-
-interface GameDetails {
-  id: number;
-  gameNumber: number;
-  startedAt: string;
-  endedAt?: string;
-  isFinished: boolean;
-  scores: Score[];
-  winner?: Winner | null;
-}
-
-interface PlayerScoreDetails {
-  userId: number;
-  userName: string;
-  totalPoints: number;
-  entries: Score[];
-}
 
 export default function GameResultspage() {
   const params = useParams();
@@ -45,21 +16,15 @@ export default function GameResultspage() {
 
   const [game, setGame] = useState<GameDetails | null>(null);
   const [loading, setLoading] = useState(true);
-
   const [modalOpen, setModalOpen] = useState(false);
   const [playerScores, setPlayerScores] = useState<PlayerScoreDetails | null>(null);
 
-  useEffect(() => {
+   useEffect(() => {
     const fetchGame = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`http://localhost:5279/api/games/${gameId}`);
-        if (!res.ok) {
-          router.push("/poker");
-          return;
-        }
-        const data: GameDetails = await res.json();
-        setGame({ ...data, scores: data.scores || [] });
+        const data = await getGameDetails(gameId);
+        setGame(data);
       } catch (err) {
         console.error("Failed to fetch game:", err);
         router.push("/poker");
@@ -71,12 +36,10 @@ export default function GameResultspage() {
     if (!isNaN(gameId)) fetchGame();
   }, [gameId, router]);
 
-  const openPlayerModal = async (userId: number) => {
+    const openPlayerModal = async (userId: number) => {
     if (!game) return;
     try {
-      const res = await fetch(`http://localhost:5279/api/games/${gameId}/players/${userId}/scores`);
-      if (!res.ok) throw new Error("Failed to fetch player scores");
-      const data: PlayerScoreDetails = await res.json();
+      const data = await getPlayerScoreDetails(gameId, userId);
       setPlayerScores(data);
       setModalOpen(true);
     } catch (err) {

@@ -15,34 +15,11 @@ import {
   SelectChangeEvent,
 } from "@mui/material";
 
-const GAME_API = "http://localhost:5279/api/games";
-const USERS_API = "http://localhost:5279/api/users";
+import { getAllGames, addParticipants as apiJoinGame, addScore } from "@/lib/api/games";
+import { getAllUsers } from "@/lib/api/users";
+import { Game } from "@/lib/models/game";
+import { User } from "@/lib/models/user";
 
-interface User {
-  id: number;
-  username: string;
-  name: string;
-}
-
-interface Participant {
-  userId: number;
-  userName: string;
-}
-interface Score {
-  id: number;
-  userId: number;
-  userName: string;
-  points: number;
-}
-
-interface Game {
-  id: number;
-  gameNumber: number;
-  startedAt: string;
-  isFinished: boolean;
-  participants: Participant[];
-  scores: Score[];
-}
 
 export default function ActiveGamePlayerPage() {
   const [currentGame, setCurrentGame] = useState<Game | null>(null);
@@ -57,47 +34,26 @@ export default function ActiveGamePlayerPage() {
   }, []);
 
   const fetchUsers = async () => {
-    const res = await fetch(USERS_API);
-    const data = await res.json();
+    const data = await getAllUsers();
     setUsers(data);
   };
 
   const fetchActiveGame = async () => {
-    const res = await fetch(GAME_API);
-    const data = await res.json();
-    const active = data.find((g: Game) => !g.isFinished);
-    if (active) {
-      setCurrentGame(active);
-    }
+    const games = await getAllGames();
+    const active = games.find((g) => !g.isFinished);
+    if (active) setCurrentGame(active);
   };
-
-
 
   const joinGame = async () => {
     if (!currentGame || !selectedUserId) return;
-
-    await fetch(`${GAME_API}/${currentGame.id}/participants`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userIds: [Number(selectedUserId)] }),
-    });
-
+    await apiJoinGame(currentGame.id, [Number(selectedUserId)]);
     setHasJoined(true);
     fetchActiveGame();
   };
 
   const submitScore = async () => {
     if (!currentGame || !selectedUserId || !points) return;
-
-    await fetch(`${GAME_API}/${currentGame.id}/score`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        userId: Number(selectedUserId),
-        value: Number(points),
-      }),
-    });
-
+    await addScore(currentGame.id, Number(selectedUserId), Number(points));
     setPoints("");
     fetchActiveGame();
   };
@@ -105,7 +61,7 @@ export default function ActiveGamePlayerPage() {
   if (!currentGame) {
     return (
       <Box sx={{ maxWidth: 600, mx: "auto", mt: 6, textAlign: "center" }}>
-        <Typography variant="h5">Der er ikke noget aktivt spil lige nu</Typography>
+        <Typography variant="h5">Currently no active game</Typography>
       </Box>
     );
   }
@@ -168,7 +124,7 @@ export default function ActiveGamePlayerPage() {
                   type="number"
                   value={points}
                   onChange={(e) => setPoints(e.target.value)}
-                  disabled={currentGame?.isFinished} 
+                  disabled={currentGame?.isFinished}
                   sx={{
                     "& input[type=number]::-webkit-outer-spin-button, & input[type=number]::-webkit-inner-spin-button": {
                       WebkitAppearance: "none",
@@ -183,7 +139,7 @@ export default function ActiveGamePlayerPage() {
                 <Button
                   variant="contained"
                   onClick={submitScore}
-                  disabled={currentGame?.isFinished} 
+                  disabled={currentGame?.isFinished}
                 >
                   Tilføj points
                 </Button>
