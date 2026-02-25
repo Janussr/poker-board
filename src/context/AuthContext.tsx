@@ -10,6 +10,8 @@ type AuthContextType = {
     isLoggedIn: boolean;
     isAdmin: boolean;
     hydrated: boolean;
+    userId: number | null;
+    username: string | null;
     login: (token: string) => void;
     logout: () => void;
 };
@@ -26,26 +28,25 @@ function parseJwt(token: string): any {
     }
 }
 
-
-
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [token, setToken] = useState<string | null>(null);
     const [role, setRole] = useState<UserRole>(null);
     const [hydrated, setHydrated] = useState(false);
-
-
+    const [userId, setUserId] = useState<number | null>(null);
+const [username, setUsername] = useState<string | null>(null);
     useEffect(() => {
-  const storedToken = localStorage.getItem("token");
-  if (storedToken) {
-    setToken(storedToken);
-    const payload = parseJwt(storedToken);
-    setRole(payload?.role ?? payload?.["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] ?? null);
-  }
-  setHydrated(true);
-}, []);
+        const storedToken = localStorage.getItem("token");
 
+        if (storedToken) {
+            setToken(storedToken);
+            const payload = parseJwt(storedToken);
 
+            setRole(payload?.role ?? payload?.["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] ?? null);
+            setUserId(payload?.id ?? null);
+            setUsername(payload?.unique_name ?? null);
+        }
+        setHydrated(true);
+    }, []);
 
     const login = (newToken: string) => {
         localStorage.setItem("token", newToken);
@@ -54,12 +55,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const payload = parseJwt(newToken);
         const newRole = payload?.role ?? payload?.["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] ?? null;
         setRole(newRole);
+        setUserId(payload?.id ?? null);
+        setUsername(payload?.unique_name ?? null);
     };
 
     const logout = () => {
         localStorage.removeItem("token");
         setToken(null);
         setRole(null);
+        setUserId(null)
     };
 
     const isAdmin = role === "Admin";
@@ -74,6 +78,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 login,
                 logout,
                 hydrated,
+                userId,
+                username,
+                
             }}
         >
             {children}
@@ -84,5 +91,5 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth() {
     const ctx = useContext(AuthContext);
     if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
-    return ctx;
+    return { ...ctx, userId: ctx.userId };
 }

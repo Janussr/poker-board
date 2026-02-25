@@ -31,7 +31,7 @@ export default function HomePage() {
           mb: 7,
         }}
       >
-        ♠ JSR Casino ♦
+        ♠ Poker Pals ♦
       </Typography>
 
 

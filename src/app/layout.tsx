@@ -46,7 +46,7 @@ function Header() {
               transition: "0.2s",
             }}
           >
-            ♠ Jsr Casino ♦
+            ♠ Poker pals ♦
           </Button>
         </Typography>
 

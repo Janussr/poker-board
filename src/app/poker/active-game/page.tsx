@@ -8,54 +8,60 @@ import {
   Typography,
   Card,
   CardContent,
-  Divider,
   TextField,
-  MenuItem,
-  Select,
-  SelectChangeEvent,
+  Divider,
 } from "@mui/material";
 
 import { getAllGames, addParticipants as apiJoinGame, addScore } from "@/lib/api/games";
-import { getAllUsers } from "@/lib/api/users";
 import { Game } from "@/lib/models/game";
-import { User } from "@/lib/models/user";
-
+import { useAuth } from "@/context/AuthContext";
 
 export default function ActiveGamePlayerPage() {
   const [currentGame, setCurrentGame] = useState<Game | null>(null);
-  const [users, setUsers] = useState<User[]>([]);
-  const [selectedUserId, setSelectedUserId] = useState("");
   const [points, setPoints] = useState("");
   const [hasJoined, setHasJoined] = useState(false);
+  const { userId, username } = useAuth(); 
 
+  // Hent aktivt spil
   useEffect(() => {
-    fetchUsers();
     fetchActiveGame();
   }, []);
-
-  const fetchUsers = async () => {
-    const data = await getAllUsers();
-    setUsers(data);
-  };
 
   const fetchActiveGame = async () => {
     const games = await getAllGames();
     const active = games.find((g) => !g.isFinished);
-    if (active) setCurrentGame(active);
+    if (active) {
+      setCurrentGame(active);
+
+      // Hvis logget bruger allerede er med i spillet, sæt hasJoined
+      if (userId && active.participants.some(p => p.userId === Number(userId))) {
+        setHasJoined(true);
+      }
+    }
   };
 
   const joinGame = async () => {
-    if (!currentGame || !selectedUserId) return;
-    await apiJoinGame(currentGame.id, [Number(selectedUserId)]);
-    setHasJoined(true);
-    fetchActiveGame();
+    if (!currentGame || !userId) return;
+
+    try {
+      await apiJoinGame(currentGame.id, [Number(userId)]);
+      setHasJoined(true);
+      fetchActiveGame();
+    } catch (err) {
+      console.error("Failed to join game:", err);
+    }
   };
 
   const submitScore = async () => {
-    if (!currentGame || !selectedUserId || !points) return;
-    await addScore(currentGame.id, Number(selectedUserId), Number(points));
-    setPoints("");
-    fetchActiveGame();
+    if (!currentGame || !userId || !points) return;
+
+    try {
+      await addScore(currentGame.id, Number(userId), Number(points));
+      setPoints("");
+      fetchActiveGame();
+    } catch (err) {
+      console.error("Failed to add score:", err);
+    }
   };
 
   if (!currentGame) {
@@ -66,11 +72,8 @@ export default function ActiveGamePlayerPage() {
     );
   }
 
-  const selectedUser = users.find((u) => u.id === Number(selectedUserId));
-
-  //Total score
   const myTotal = currentGame.scores
-    .filter((s) => s.userId === Number(selectedUserId))
+    .filter((s) => s.userId === Number(userId))
     .reduce((sum, s) => sum + s.points, 0);
 
   return (
@@ -82,40 +85,20 @@ export default function ActiveGamePlayerPage() {
       <Card>
         <CardContent>
           {!hasJoined ? (
-            <>
-              <Typography mb={2}>Vælg dig selv</Typography>
-
-              <Stack direction="row" spacing={2} mb={2}>
-                <Select
-                  fullWidth
-                  value={selectedUserId}
-                  onChange={(e: SelectChangeEvent) => setSelectedUserId(e.target.value)}
-                  displayEmpty
-                >
-                  <MenuItem value="" disabled>
-                    Vælg spiller
-                  </MenuItem>
-                  {users.map((u) => (
-                    <MenuItem key={u.id} value={u.id}>
-                      {u.name} ({u.username})
-                    </MenuItem>
-                  ))}
-                </Select>
-
-                <Button variant="contained" onClick={joinGame}>
-                  Join
-                </Button>
-              </Stack>
-
-              <Divider />
+            <Box textAlign="center">
+              <Typography mb={2}>Du er logget ind som spiller. {username} Klik for at join spillet</Typography>
+              <Button variant="contained" onClick={joinGame}>
+                Join game
+              </Button>
+              <Divider sx={{ my: 2 }} />
               <Typography variant="caption" color="text.secondary">
                 Du kan kun se og indtaste din egen score.
               </Typography>
-            </>
+            </Box>
           ) : (
-            <>
+            <Box>
               <Typography mb={2} fontWeight="bold">
-                Du spiller som: {selectedUser?.name}
+                Du spiller som: {username}
               </Typography>
 
               <Stack spacing={2}>
@@ -144,29 +127,23 @@ export default function ActiveGamePlayerPage() {
                   Tilføj points
                 </Button>
 
-                {hasJoined && currentGame && (
-                  <>
-                    <Divider sx={{ my: 2 }} />
+                <Divider sx={{ my: 2 }} />
 
-                    <Typography fontWeight="bold" mb={1}>
-                      Dine scores:
-                    </Typography>
+                <Typography fontWeight="bold" mb={1}>
+                  Dine scores:
+                </Typography>
 
-                    {currentGame.scores
-                      .filter((s) => s.userId === Number(selectedUserId))
-                      .map((s) => (
-                        <Typography key={s.id}>
-                          +{s.points} point
-                        </Typography>
-                      ))}
+                {currentGame.scores
+                  .filter((s) => s.userId === Number(userId))
+                  .map((s) => (
+                    <Typography key={s.id}>{username}: +{s.points} point</Typography>
+                  ))}
 
-                    <Typography mt={1} fontWeight="bold">
-                      Total: {myTotal} points
-                    </Typography>
-                  </>
-                )}
+                <Typography mt={1} fontWeight="bold">
+                  Total: {myTotal} points
+                </Typography>
               </Stack>
-            </>
+            </Box>
           )}
         </CardContent>
       </Card>
