@@ -3,12 +3,16 @@
 import { ReactNode } from "react";
 import { Stack, Button, Box } from "@mui/material";
 import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
 
 export default function PokerLayout({
   children,
 }: {
   children: ReactNode;
 }) {
+  const { isLoggedIn, role, isAdmin, hydrated } = useAuth();
+if (!hydrated) return null;
+
   return (
     <Box>
       <Stack spacing={2} direction="row" justifyContent="center" mt={5}>
@@ -28,9 +32,11 @@ export default function PokerLayout({
           Hall of Fame
         </Button>
 
-        <Button component={Link} href="/poker/admin-panel" variant="contained">
-          Admin panel
-        </Button>
+         {isLoggedIn && isAdmin && (
+          <Button component={Link} href="/poker/admin-panel" variant="contained">
+            Admin panel
+          </Button>
+        )}
 
       </Stack>
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Box,
   Card,
@@ -8,10 +9,42 @@ import {
   TextField,
   Button,
   Link as MuiLink,
+  Alert,
 } from "@mui/material";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext"; 
+import { loginUser } from "@/lib/api/users";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const { login } = useAuth(); // ✅ brug login fra context
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+const handleLogin = async () => {
+  setError(null);
+  setLoading(true);
+
+  try {
+    const data = await loginUser(username, password);
+    login(data.token);
+    router.push("/poker/active-game");
+  } catch (err: any) {
+    setError(err.message ?? "Login fejlede");
+  } finally {
+    setLoading(false);
+  }
+};
+
+ const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "Enter") {
+      handleLogin();
+    }
+  };
+
   return (
     <Box
       sx={{
@@ -19,7 +52,6 @@ export default function LoginPage() {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        // background: "radial-gradient(circle at center, #8b0000, #1a0000)",
       }}
     >
       <Card
@@ -43,12 +75,16 @@ export default function LoginPage() {
             ♠ Casino Login ♦
           </Typography>
 
+          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
           <TextField
             fullWidth
-            label="Email"
-            type="email"
+            label="Username"
             variant="outlined"
             margin="normal"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            onKeyDown={handleKeyDown} 
           />
 
           <TextField
@@ -57,6 +93,9 @@ export default function LoginPage() {
             type="password"
             variant="outlined"
             margin="normal"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            onKeyDown={handleKeyDown} 
           />
 
           <Button
@@ -65,14 +104,14 @@ export default function LoginPage() {
             sx={{
               mt: 3,
               backgroundColor: "#8b0000",
-              "&:hover": {
-                backgroundColor: "#a30000",
-              },
+              "&:hover": { backgroundColor: "#a30000" },
               fontWeight: "bold",
               letterSpacing: "1px",
             }}
+            onClick={handleLogin}
+            disabled={loading}
           >
-            Login
+            {loading ? "Logger ind..." : "Login"}
           </Button>
 
           <Typography sx={{ mt: 2, textAlign: "center" }}>

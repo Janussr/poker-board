@@ -17,13 +17,6 @@ import {
 import { HallOfFameEntry } from "@/lib/models/game";
 import { getHallOfFame } from "@/lib/api/games";
 
-// const HALL_OF_FAME_API = "http://localhost:5279/api/halloffame";
-
-// interface HallOfFameEntry {
-//   playerName: string;
-//   wins: number;
-// }
-
 export default function HallOfFamePage() {
   const [hallOfFame, setHallOfFame] = useState<HallOfFameEntry[]>([]);
   const [loading, setLoading] = useState(true);

@@ -15,44 +15,13 @@ import {
   SelectChangeEvent,
 } from "@mui/material";
 import Link from "next/link";
-import router from "next/router";
+import { useRouter } from "next/navigation";
 import { getAllGames, cancelGame, startGame, endGame, addParticipants, removeParticipant, addScore } from "@/lib/api/games";
 import { getAllUsers } from "@/lib/api/users";
 import { Score } from "@/lib/models/score";
 import { Game, Participant } from "@/lib/models/game";
 import { User } from "@/lib/models/user"
-
-// const GAME_API = "http://localhost:5279/api/games";
-// const USERS_API = "http://localhost:5279/api/users";
-
-// interface User {
-//   id: number;
-//   username: string;
-//   name: string;
-// }
-
-// interface Participant {
-//   userId: number;
-//   userName: string;
-// }
-
-// interface Score {
-//   id: number;
-//   userId: number;
-//   userName: string;
-//   points: number;
-// }
-
-// interface Game {
-//   id: number;
-//   gameNumber: number;
-//   startedAt: string;
-//   endedAt?: string;
-//   isFinished: boolean;
-//   participants: Participant[];
-//   scores: Score[];
-// }
-
+import { useAuth } from "@/context/AuthContext";
 
 export default function AdminPanelPage() {
   const [games, setGames] = useState<Game[]>([]);
@@ -61,17 +30,27 @@ export default function AdminPanelPage() {
   const [selectedUserId, setSelectedUserId] = useState("");
   const [scoreInputs, setScoreInputs] = useState<{ [key: number]: string }>({});
   const [hasJoined, setHasJoined] = useState(false);
+  const { isLoggedIn, role } = useAuth();
+  const router = useRouter();
+  
+
+  // 🔐 Route protection
+ useEffect(() => {
+  if (!isLoggedIn) {
+    router.replace("/login");
+    return;
+  }
+
+  if (role !== "Admin") {
+    router.replace("/");
+    return;
+  }
+}, [isLoggedIn, role, router]);
 
   useEffect(() => {
     fetchGames();
     fetchUsers();
   }, []);
-
-  // const fetchUsers = async () => {
-  //   const res = await fetch(USERS_API);
-  //   const data = await res.json();
-  //   setUsers(data);
-  // };
 
   const fetchUsers = async () => {
     try {
@@ -81,24 +60,6 @@ export default function AdminPanelPage() {
       console.error(err);
     }
   };
-
-  // const fetchGames = async () => {
-  //   const res = await fetch(GAME_API);
-  //   const data = await res.json();
-  //   setGames(data);
-
-  //   const active = data.find((g: Game) => !g.isFinished);
-  //   if (active) {
-  //     const participants = active.participants || [];
-  //     const scores = active.scores || [];
-
-  //     setCurrentGame({ ...active, participants, scores });
-
-  //     const inputs: { [key: number]: string } = {};
-  //     participants.forEach((p: Participant) => (inputs[p.userId] = ""));
-  //     setScoreInputs(inputs);
-  //   }
-  // };
 
   const fetchGames = async () => {
     try {
@@ -120,12 +81,6 @@ export default function AdminPanelPage() {
     }
   };
 
-  // const startGame = async () => {
-  //   const res = await fetch(`${GAME_API}/start`, { method: "POST" });
-  //   const game = await res.json();
-  //   setCurrentGame({ ...game, participants: [], scores: [] });
-  // };
-
   const startGameHandler = async () => {
     try {
       const game = await startGame();
@@ -134,21 +89,6 @@ export default function AdminPanelPage() {
       console.error(err);
     }
   };
-
-  // const addScore = async (userId: number) => {
-  //   if (!currentGame) return;
-  //   const value = Number(scoreInputs[userId]);
-  //   if (!value) return;
-
-  //   await fetch(`${GAME_API}/${currentGame.id}/score`, {
-  //     method: "POST",
-  //     headers: { "Content-Type": "application/json" },
-  //     body: JSON.stringify({ userId, value }),
-  //   });
-
-  //   setScoreInputs({ ...scoreInputs, [userId]: "" });
-  //   fetchGames();
-  // };
 
   const addScoreHandler = async (userId: number) => {
     if (!currentGame) return;
@@ -163,25 +103,6 @@ export default function AdminPanelPage() {
       console.error(err);
     }
   };
-
-  // const endOrCancelGame = async () => {
-  //   if (!currentGame) return;
-
-  //   const endpoint =
-  //     currentGame.scores.length === 0
-  //       ? `${GAME_API}/${currentGame.id}/cancel`
-  //       : `${GAME_API}/${currentGame.id}/end`;
-
-  //   const res = await fetch(endpoint, { method: "POST" });
-
-  //   if (!res.ok) {
-  //     const err = await res.json();
-  //     alert(err.message || "Noget gik galt");
-  //     return;
-  //   }
-  //   setCurrentGame(null);
-  //   fetchGames();
-  // };
 
   const endOrCancelGame = async () => {
     if (!currentGame) return;
@@ -199,27 +120,6 @@ export default function AdminPanelPage() {
     }
   };
 
-  // const handleSelectUser = async (e: SelectChangeEvent) => {
-  //   const userId = e.target.value;
-  //   setSelectedUserId(userId);
-
-  //   if (!currentGame || !userId) return;
-
-  //   try {
-  //     await fetch(`${GAME_API}/${currentGame.id}/participants`, {
-  //       method: "POST",
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify({ userIds: [Number(userId)] }),
-  //     });
-
-  //     setSelectedUserId("");
-  //     fetchGames();
-  //     setHasJoined(true);
-  //   } catch (error) {
-  //     console.error("Failed to add participant:", error);
-  //   }
-  // };
-
   const handleSelectUser = async (e: SelectChangeEvent) => {
     const userId = Number(e.target.value);
     setSelectedUserId(String(userId));
@@ -236,14 +136,6 @@ export default function AdminPanelPage() {
     }
   };
 
-  // const handleRemovePlayer = async (gameId: number, userId: number) => {
-  //   const res = await fetch(`${GAME_API}/${gameId}/participants/${userId}`, { method: "DELETE" });
-  //   if (!res.ok) return alert("Kunne ikke fjerne spiller");
-
-  //   const updatedParticipants: Participant[] = await res.json();
-  //   setCurrentGame(prev => prev ? { ...prev, participants: updatedParticipants } : prev);
-  // };
-
   const handleRemovePlayer = async (gameId: number, userId: number) => {
     try {
       const updatedParticipants = await removeParticipant(gameId, userId);
@@ -253,6 +145,9 @@ export default function AdminPanelPage() {
     }
   };
 
+ if (!isLoggedIn || role !== "Admin") {
+    return null;
+  }
   return (
     <Box p={5}>
       <Typography variant="h4" mb={3}>🎮 Poker Game Admin</Typography>
@@ -336,7 +231,7 @@ export default function AdminPanelPage() {
           </CardContent>
         </Card>
       )}
-      
+
       <Typography variant="h5" mt={4}>All Games</Typography>
       {[...games]
         .sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())
