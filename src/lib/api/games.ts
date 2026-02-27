@@ -39,3 +39,8 @@ export const removeParticipant = (gameId: number, userId: number) =>
   apiFetch<Participant[]>(`/games/${gameId}/participants/${userId}`, {
     method: "DELETE",
   });
+
+  export const removePoints = (pointId: number) =>
+  apiFetch<Participant[]>(`/games/points/${pointId}`, {
+    method: "DELETE",
+  });

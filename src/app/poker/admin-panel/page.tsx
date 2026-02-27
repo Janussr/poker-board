@@ -13,10 +13,14 @@ import {
   MenuItem,
   Select,
   SelectChangeEvent,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
 } from "@mui/material";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { getAllGames, cancelGame, startGame, endGame, addParticipants, removeParticipant, addScore } from "@/lib/api/games";
+import { getAllGames, cancelGame, startGame, endGame, addParticipants, removeParticipant, addScore, removePoints } from "@/lib/api/games";
 import { getAllUsers } from "@/lib/api/users";
 import { Score } from "@/lib/models/score";
 import { Game, Participant } from "@/lib/models/game";
@@ -24,6 +28,7 @@ import { User } from "@/lib/models/user"
 import { useAuth } from "@/context/AuthContext";
 
 export default function AdminPanelPage() {
+  const router = useRouter();
   const [games, setGames] = useState<Game[]>([]);
   const [currentGame, setCurrentGame] = useState<Game | null>(null);
   const [users, setUsers] = useState<User[]>([]);
@@ -31,21 +36,22 @@ export default function AdminPanelPage() {
   const [scoreInputs, setScoreInputs] = useState<{ [key: number]: string }>({});
   const [hasJoined, setHasJoined] = useState(false);
   const { isLoggedIn, role } = useAuth();
-  const router = useRouter();
-  
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [scoreToRemove, setScoreToRemove] = useState<Score | null>(null);
+
 
   // 🔐 Route protection
- useEffect(() => {
-  if (!isLoggedIn) {
-    router.replace("/login");
-    return;
-  }
+  useEffect(() => {
+    if (!isLoggedIn) {
+      router.replace("/login");
+      return;
+    }
 
-  if (role !== "Admin") {
-    router.replace("/");
-    return;
-  }
-}, [isLoggedIn, role, router]);
+    if (role !== "Admin") {
+      router.replace("/");
+      return;
+    }
+  }, [isLoggedIn, role, router]);
 
   useEffect(() => {
     fetchGames();
@@ -145,7 +151,33 @@ export default function AdminPanelPage() {
     }
   };
 
- if (!isLoggedIn || role !== "Admin") {
+  //Handle remove points
+  const handleConfirmRemove = (score: Score) => {
+    setScoreToRemove(score);
+    setConfirmOpen(true);
+  };
+
+  const handleCancelRemove = () => {
+    setScoreToRemove(null);
+    setConfirmOpen(false);
+  };
+
+  const handleRemovePoint = async () => {
+    if (!scoreToRemove) return;
+    try {
+      await removePoints(scoreToRemove.id);
+      fetchGames(); // refresh game data
+    } catch (err) {
+      console.error("Failed to remove points:", err);
+      alert("Could not remove points");
+    } finally {
+      setConfirmOpen(false);
+      setScoreToRemove(null);
+    }
+  };
+
+  //Keep this just above return
+  if (!isLoggedIn || role !== "Admin") {
     return null;
   }
   return (
@@ -163,7 +195,7 @@ export default function AdminPanelPage() {
               Active Game #{currentGame.gameNumber}
             </Typography>
             <Typography>
-              Started: {new Date(currentGame.startedAt).toLocaleString()}
+              Started: {new Date(currentGame.startedAt).toLocaleString("da-DK")}
             </Typography>
 
             <Divider sx={{ my: 2 }} />
@@ -196,18 +228,18 @@ export default function AdminPanelPage() {
                 <Typography sx={{ minWidth: 140 }}>{p.userName}</Typography>
                 <TextField
                   size="small"
-                  label="Score"
+                  label="Type points to add"
                   value={scoreInputs[p.userId] || ""}
                   onChange={(e) =>
                     setScoreInputs({ ...scoreInputs, [p.userId]: e.target.value })
                   }
                 />
                 <Button variant="contained" onClick={() => addScoreHandler(p.userId)}>
-                  Add Score
+                  Add Points
                 </Button>
 
                 <Button variant="outlined" color="error" onClick={() => handleRemovePlayer(currentGame.id, p.userId)}>
-                  Remove
+                  Remove Player
                 </Button>
               </Stack>
             ))}
@@ -215,12 +247,39 @@ export default function AdminPanelPage() {
             <Divider sx={{ my: 2 }} />
 
             {/* All score entries */}
+
+
+
             <Typography variant="subtitle1">Score entries</Typography>
             {currentGame.scores.map((s) => (
-              <Typography key={s.id}>
-                {s.userName}: {s.points}
-              </Typography>
+              <Stack key={s.id} direction="row" spacing={2} alignItems="center" mb={1}>
+                <Typography sx={{ minWidth: 140 }}>
+                  {s.userName}: {s.points}
+                </Typography>
+                {s.points > 0 && (
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    onClick={() => handleConfirmRemove(s)}
+                  >
+                    Remove
+                  </Button>
+                )}
+              </Stack>
             ))}
+
+            <Dialog open={confirmOpen} onClose={handleCancelRemove}>
+              <DialogTitle>Confirm Removal</DialogTitle>
+              <DialogContent>
+                Are you sure you want to remove {scoreToRemove?.points} points from {scoreToRemove?.userName}?
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={handleCancelRemove}>No</Button>
+                <Button color="error" onClick={handleRemovePoint}>Yes</Button>
+              </DialogActions>
+            </Dialog>
+
+
             <Button
               color={currentGame.scores.length === 0 ? "warning" : "error"}
               variant="contained"

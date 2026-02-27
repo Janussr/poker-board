@@ -68,8 +68,8 @@ export default function GameResultspage() {
       </Typography>
 
       <Typography variant="subtitle2" sx={{ mb: 2, textAlign: "center" }}>
-        Started: {new Date(game.startedAt).toLocaleString()}
-        {game.endedAt && <> — Ended: {new Date(game.endedAt).toLocaleString()}</>}
+        Started: {new Date(game.startedAt).toLocaleString("da-DK")}
+        {game.endedAt && <> — Ended: {new Date(game.endedAt).toLocaleString("da-DK")}</>}
       </Typography>
 
       <Card sx={{ borderRadius: 3, boxShadow: 3 }}>
@@ -142,7 +142,7 @@ export default function GameResultspage() {
               sx={{ py: 1 }}
             >
               <Typography>Points: {entry.points}</Typography>
-              <Typography>{new Date(entry.createdAt).toLocaleString()}</Typography>
+              <Typography>{new Date(entry.createdAt).toLocaleString("da-DK")}</Typography>
             </Stack>
           ))}
           {playerScores?.entries.length === 0 && <Typography>No scores yet.</Typography>}

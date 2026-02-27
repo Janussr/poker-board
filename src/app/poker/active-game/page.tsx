@@ -15,12 +15,14 @@ import {
 import { getAllGames, addParticipants as apiJoinGame, addScore } from "@/lib/api/games";
 import { Game } from "@/lib/models/game";
 import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
 
 export default function ActiveGamePlayerPage() {
   const [currentGame, setCurrentGame] = useState<Game | null>(null);
   const [points, setPoints] = useState("");
   const [hasJoined, setHasJoined] = useState(false);
-  const { userId, username } = useAuth(); 
+  const { userId, username, numericUserId } = useAuth(); 
+const router = useRouter(); // ✅ skal være inde i komponenten
 
   // Hent aktivt spil
   useEffect(() => {
@@ -33,36 +35,45 @@ export default function ActiveGamePlayerPage() {
     if (active) {
       setCurrentGame(active);
 
-      // Hvis logget bruger allerede er med i spillet, sæt hasJoined
       if (userId && active.participants.some(p => p.userId === Number(userId))) {
         setHasJoined(true);
       }
     }
   };
 
-  const joinGame = async () => {
-    if (!currentGame || !userId) return;
+   const joinGame = async () => {
+    // Hvis ikke logget ind → redirect
+    if (!numericUserId) {
+      router.push("/login");
+      return;
+    }
+
+    if (!currentGame) return;
 
     try {
-      await apiJoinGame(currentGame.id, [Number(userId)]);
+      await apiJoinGame(currentGame.id, [numericUserId]);
       setHasJoined(true);
       fetchActiveGame();
     } catch (err) {
       console.error("Failed to join game:", err);
     }
   };
+const submitScore = async () => {
+  if (!currentGame || !numericUserId || !points) return;
 
-  const submitScore = async () => {
-    if (!currentGame || !userId || !points) return;
-
-    try {
-      await addScore(currentGame.id, Number(userId), Number(points));
-      setPoints("");
-      fetchActiveGame();
-    } catch (err) {
-      console.error("Failed to add score:", err);
+  try {
+    await addScore(currentGame.id, numericUserId, Number(points));
+    setPoints("");
+    fetchActiveGame();
+  } catch (err: any) {
+    if (err.message.includes("Game has ended") || err.message.includes("Game has ended")) {
+      alert("Game has ended.");
+    } else {
+      console.error("Error at submitScore:", err);
+      alert("Something went wrong try later.");
     }
-  };
+  }
+};
 
   if (!currentGame) {
     return (
@@ -86,19 +97,19 @@ export default function ActiveGamePlayerPage() {
         <CardContent>
           {!hasJoined ? (
             <Box textAlign="center">
-              <Typography mb={2}>Du er logget ind som spiller. {username} Klik for at join spillet</Typography>
+              <Typography mb={2}>You are logged in as. {username} Click to join the game</Typography>
               <Button variant="contained" onClick={joinGame}>
                 Join game
               </Button>
               <Divider sx={{ my: 2 }} />
               <Typography variant="caption" color="text.secondary">
-                Du kan kun se og indtaste din egen score.
+                You can onle see and type in your own points.
               </Typography>
             </Box>
           ) : (
             <Box>
               <Typography mb={2} fontWeight="bold">
-                Du spiller som: {username}
+                Playing as: {username}
               </Typography>
 
               <Stack spacing={2}>
@@ -124,13 +135,13 @@ export default function ActiveGamePlayerPage() {
                   onClick={submitScore}
                   disabled={currentGame?.isFinished}
                 >
-                  Tilføj points
+                  Add points
                 </Button>
 
                 <Divider sx={{ my: 2 }} />
 
                 <Typography fontWeight="bold" mb={1}>
-                  Dine scores:
+                  Your scores:
                 </Typography>
 
                 {currentGame.scores

@@ -12,6 +12,7 @@ type AuthContextType = {
     hydrated: boolean;
     userId: number | null;
     username: string | null;
+    numericUserId: number | null;
     login: (token: string) => void;
     logout: () => void;
 };
@@ -33,7 +34,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [role, setRole] = useState<UserRole>(null);
     const [hydrated, setHydrated] = useState(false);
     const [userId, setUserId] = useState<number | null>(null);
-const [username, setUsername] = useState<string | null>(null);
+    const [username, setUsername] = useState<string | null>(null);
+const numericUserId = userId ? Number(userId) : null;
+
     useEffect(() => {
         const storedToken = localStorage.getItem("token");
 
@@ -80,7 +83,8 @@ const [username, setUsername] = useState<string | null>(null);
                 hydrated,
                 userId,
                 username,
-                
+                numericUserId
+
             }}
         >
             {children}
