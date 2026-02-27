@@ -2,6 +2,15 @@ import { apiFetch } from "./clients";
 import { Game, GameDetails, HallOfFameEntry, Participant } from "@/lib/models/game";
 import { PlayerScoreDetails, Score } from "@/lib/models/score";
 
+export const startGame = () =>
+  apiFetch<Game>(`/games/start`, { method: "POST" });
+
+export const endGame = (gameId: number) =>
+  apiFetch(`/games/${gameId}/end`, { method: "POST" });
+
+export const cancelGame = (gameId: number) =>
+  apiFetch(`/games/${gameId}/cancel`, { method: "POST" });
+
 export const getGameDetails = (gameId: number) =>
   apiFetch<GameDetails>(`/games/${gameId}`);
 
@@ -14,20 +23,24 @@ export const getAllGames = () =>
 export const getHallOfFame = () =>
   apiFetch<HallOfFameEntry[]>(`/halloffame`);
 
-export const startGame = () =>
-  apiFetch<Game>(`/games/start`, { method: "POST" });
-
 export const addScore = (gameId: number, userId: number, value: number) =>
   apiFetch<PlayerScoreDetails>(`/games/${gameId}/score`, {
     method: "POST",
     body: { userId, value } as any, 
   });
 
-export const endGame = (gameId: number) =>
-  apiFetch(`/games/${gameId}/end`, { method: "POST" });
+  export const addPointsBulk = (gameId: number, scores: { userId: number; points: number }[]) =>
+  apiFetch<Score[]>(`/games/${gameId}/points/bulk`, {
+    method: "POST",
+    body: JSON.stringify({ gameId, scores }),
+  });
 
-export const cancelGame = (gameId: number) =>
-  apiFetch(`/games/${gameId}/cancel`, { method: "POST" });
+  export const removePoints = (pointId: number) =>
+  apiFetch<Participant[]>(`/games/points/${pointId}`, {
+    method: "DELETE",
+  });
+
+
 
 export const addParticipants = (gameId: number, userIds: number[]) =>
   apiFetch<Participant[]>(`/games/${gameId}/participants`, {
@@ -40,7 +53,4 @@ export const removeParticipant = (gameId: number, userId: number) =>
     method: "DELETE",
   });
 
-  export const removePoints = (pointId: number) =>
-  apiFetch<Participant[]>(`/games/points/${pointId}`, {
-    method: "DELETE",
-  });
+  

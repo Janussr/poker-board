@@ -20,7 +20,7 @@ import {
 } from "@mui/material";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { getAllGames, cancelGame, startGame, endGame, addParticipants, removeParticipant, addScore, removePoints } from "@/lib/api/games";
+import { getAllGames, cancelGame, startGame, endGame, addParticipants, removeParticipant, addScore, removePoints, addPointsBulk } from "@/lib/api/games";
 import { getAllUsers } from "@/lib/api/users";
 import { Score } from "@/lib/models/score";
 import { Game, Participant } from "@/lib/models/game";
@@ -176,6 +176,25 @@ export default function AdminPanelPage() {
     }
   };
 
+  const addAllScoresHandler = async () => {
+    if (!currentGame) return;
+
+    const scoresToAdd = Object.entries(scoreInputs)
+      .map(([userId, points]) => ({ userId: Number(userId), points: Number(points) }))
+      .filter(s => s.points > 0);
+
+    if (scoresToAdd.length === 0) return;
+
+    try {
+      await addPointsBulk(currentGame.id, scoresToAdd);
+      setScoreInputs({});
+      fetchGames();
+    } catch (err) {
+      console.error(err);
+      alert("Could not add scores");
+    }
+  };
+
   //Keep this just above return
   if (!isLoggedIn || role !== "Admin") {
     return null;
@@ -237,19 +256,14 @@ export default function AdminPanelPage() {
                 <Button variant="contained" onClick={() => addScoreHandler(p.userId)}>
                   Add Points
                 </Button>
-
                 <Button variant="outlined" color="error" onClick={() => handleRemovePlayer(currentGame.id, p.userId)}>
                   Remove Player
                 </Button>
               </Stack>
             ))}
-
             <Divider sx={{ my: 2 }} />
 
             {/* All score entries */}
-
-
-
             <Typography variant="subtitle1">Score entries</Typography>
             {currentGame.scores.map((s) => (
               <Stack key={s.id} direction="row" spacing={2} alignItems="center" mb={1}>
@@ -279,7 +293,11 @@ export default function AdminPanelPage() {
               </DialogActions>
             </Dialog>
 
+            <Button variant="contained" color="primary" onClick={addAllScoresHandler}>
+              Add All Scores
+            </Button>
 
+            <Box display="flex" justifyContent="space-between" mt={2}></Box>
             <Button
               color={currentGame.scores.length === 0 ? "warning" : "error"}
               variant="contained"
@@ -287,6 +305,7 @@ export default function AdminPanelPage() {
             >
               {currentGame.scores.length === 0 ? "Annullér spil" : "Afslut spil"}
             </Button>
+            <Box />
           </CardContent>
         </Card>
       )}

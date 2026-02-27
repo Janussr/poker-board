@@ -21,10 +21,10 @@ export default function ActiveGamePlayerPage() {
   const [currentGame, setCurrentGame] = useState<Game | null>(null);
   const [points, setPoints] = useState("");
   const [hasJoined, setHasJoined] = useState(false);
-  const { userId, username, numericUserId } = useAuth(); 
-const router = useRouter(); // ✅ skal være inde i komponenten
+  const { userId, username, numericUserId } = useAuth();
+  const router = useRouter();
 
-  // Hent aktivt spil
+  // Fetch active game
   useEffect(() => {
     fetchActiveGame();
   }, []);
@@ -41,8 +41,8 @@ const router = useRouter(); // ✅ skal være inde i komponenten
     }
   };
 
-   const joinGame = async () => {
-    // Hvis ikke logget ind → redirect
+  const joinGame = async () => {
+    // If not logged in -> login page
     if (!numericUserId) {
       router.push("/login");
       return;
@@ -58,22 +58,22 @@ const router = useRouter(); // ✅ skal være inde i komponenten
       console.error("Failed to join game:", err);
     }
   };
-const submitScore = async () => {
-  if (!currentGame || !numericUserId || !points) return;
+  const submitScore = async () => {
+    if (!currentGame || !numericUserId || !points) return;
 
-  try {
-    await addScore(currentGame.id, numericUserId, Number(points));
-    setPoints("");
-    fetchActiveGame();
-  } catch (err: any) {
-    if (err.message.includes("Game has ended") || err.message.includes("Game has ended")) {
-      alert("Game has ended.");
-    } else {
-      console.error("Error at submitScore:", err);
-      alert("Something went wrong try later.");
+    try {
+      await addScore(currentGame.id, numericUserId, Number(points));
+      setPoints("");
+      fetchActiveGame();
+    } catch (err: any) {
+      if (err.message.includes("Game has ended") || err.message.includes("Game has ended")) {
+        alert("Game has ended.");
+      } else {
+        console.error("Error at submitScore:", err);
+        alert("Something went wrong try later.");
+      }
     }
-  }
-};
+  };
 
   if (!currentGame) {
     return (
