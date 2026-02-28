@@ -39,6 +39,8 @@ export default function AdminPanelPage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [scoreToRemove, setScoreToRemove] = useState<Score | null>(null);
   const [endGameConfirmOpen, setEndGameConfirmOpen] = useState(false);
+  const [participantToRemove, setParticipantToRemove] = useState<Participant | null>(null);
+  const [removeParticipantConfirmOpen, setRemoveParticipantConfirmOpen] = useState(false);
 
   // 🔐 Route protection
   useEffect(() => {
@@ -126,7 +128,7 @@ export default function AdminPanelPage() {
       setCurrentGame(null);
       fetchGames();
     } catch (err: any) {
-      alert(err.message || "Noget gik galt");
+      alert(err.message || "Something went wrong");
     } finally {
       setEndGameConfirmOpen(false);
     }
@@ -148,12 +150,27 @@ export default function AdminPanelPage() {
     }
   };
 
-  const handleRemovePlayer = async (gameId: number, userId: number) => {
+  const handleCancelRemoveParticipant = () => {
+    setParticipantToRemove(null);
+    setRemoveParticipantConfirmOpen(false);
+  };
+
+  const handleConfirmRemoveParticipant = async () => {
+    if (!currentGame || !participantToRemove) return;
+
     try {
-      const updatedParticipants = await removeParticipant(gameId, userId);
-      setCurrentGame(prev => prev ? { ...prev, participants: updatedParticipants } : prev);
+      const updatedParticipants = await removeParticipant(
+        currentGame.id,
+        participantToRemove.userId
+      );
+      setCurrentGame(prev =>
+        prev ? { ...prev, participants: updatedParticipants } : prev
+      );
     } catch (err) {
-      alert("Kunne ikke fjerne spiller");
+      alert("Couldn't remove player");
+    } finally {
+      setParticipantToRemove(null);
+      setRemoveParticipantConfirmOpen(false);
     }
   };
 
@@ -262,7 +279,14 @@ export default function AdminPanelPage() {
                 <Button variant="contained" onClick={() => addScoreHandler(p.userId)}>
                   Add Points
                 </Button>
-                <Button variant="outlined" color="error" onClick={() => handleRemovePlayer(currentGame.id, p.userId)}>
+                <Button
+                  variant="outlined"
+                  color="error"
+                  onClick={() => {
+                    setParticipantToRemove(p);
+                    setRemoveParticipantConfirmOpen(true);
+                  }}
+                >
                   Remove Player
                 </Button>
               </Stack>
@@ -287,7 +311,21 @@ export default function AdminPanelPage() {
                 )}
               </Stack>
             ))}
-
+            <Dialog
+              open={removeParticipantConfirmOpen}
+              onClose={handleCancelRemoveParticipant}
+            >
+              <DialogTitle>Remove player?</DialogTitle>
+              <DialogContent>
+                Are you sure you want to remove {participantToRemove?.userName} from the game?
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={handleCancelRemoveParticipant}>No</Button>
+                <Button color="error" onClick={handleConfirmRemoveParticipant}>
+                  Yes
+                </Button>
+              </DialogActions>
+            </Dialog>
             <Dialog open={confirmOpen} onClose={handleCancelRemove}>
               <DialogTitle>Confirm Removal</DialogTitle>
               <DialogContent>
