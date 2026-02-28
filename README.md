@@ -11,7 +11,7 @@ It provides a simple UI for tracking scores, viewing game history, and seeing wi
 
 ## Backend
 The backend API for this project can be found here:
-https://github.com/Janussr/jsr-casino-backend
+[https://github.com/Janussr/jsr-casino-backend](https://github.com/Janussr/casino-backend)
 
 ## Learn More
 
