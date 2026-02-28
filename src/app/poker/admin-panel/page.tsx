@@ -38,7 +38,7 @@ export default function AdminPanelPage() {
   const { isLoggedIn, role } = useAuth();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [scoreToRemove, setScoreToRemove] = useState<Score | null>(null);
-
+  const [endGameConfirmOpen, setEndGameConfirmOpen] = useState(false);
 
   // 🔐 Route protection
   useEffect(() => {
@@ -110,7 +110,11 @@ export default function AdminPanelPage() {
     }
   };
 
-  const endOrCancelGame = async () => {
+  const handleEndGameClick = () => {
+    setEndGameConfirmOpen(true);
+  };
+
+  const confirmEndOrCancelGame = async () => {
     if (!currentGame) return;
 
     try {
@@ -123,6 +127,8 @@ export default function AdminPanelPage() {
       fetchGames();
     } catch (err: any) {
       alert(err.message || "Noget gik galt");
+    } finally {
+      setEndGameConfirmOpen(false);
     }
   };
 
@@ -292,6 +298,22 @@ export default function AdminPanelPage() {
                 <Button color="error" onClick={handleRemovePoint}>Yes</Button>
               </DialogActions>
             </Dialog>
+            <Dialog open={endGameConfirmOpen} onClose={() => setEndGameConfirmOpen(false)}>
+              <DialogTitle>
+                {currentGame?.scores.length === 0 ? "Cancel game?" : "End game?"}
+              </DialogTitle>
+              <DialogContent>
+                {currentGame?.scores.length === 0
+                  ? "Are you sure you want to cancel this game?"
+                  : "Are you sure you want to end this game?"}
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={() => setEndGameConfirmOpen(false)}>No</Button>
+                <Button color="error" onClick={confirmEndOrCancelGame}>
+                  Yes
+                </Button>
+              </DialogActions>
+            </Dialog>
 
             <Button variant="contained" color="primary" onClick={addAllScoresHandler}>
               Add All Scores
@@ -301,9 +323,9 @@ export default function AdminPanelPage() {
             <Button
               color={currentGame.scores.length === 0 ? "warning" : "error"}
               variant="contained"
-              onClick={endOrCancelGame}
+              onClick={handleEndGameClick}
             >
-              {currentGame.scores.length === 0 ? "Annullér spil" : "Afslut spil"}
+              {currentGame.scores.length === 0 ? "Cancel game" : "End game"}
             </Button>
             <Box />
           </CardContent>

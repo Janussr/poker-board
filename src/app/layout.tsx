@@ -14,8 +14,7 @@ import Providers from "./Providers";
 import { useAuth } from "@/context/AuthContext";
 
 function Header() {
-  const { isLoggedIn, logout, isAdmin, hydrated } = useAuth();
-
+  const { isLoggedIn, logout, isAdmin, hydrated, username } = useAuth();
   return (
     <AppBar
       position="sticky"
@@ -49,7 +48,6 @@ function Header() {
             ♠ Poker pals ♦
           </Button>
         </Typography>
-
         <Box sx={{ display: "flex", gap: 2 }}>
           <Button component={Link} href="/blackjack" sx={{ color: "gold" }}>
             ♣ Black Jack
@@ -72,6 +70,7 @@ function Header() {
               <Button onClick={logout} sx={{ color: "gold" }}>
                 Logout
               </Button>
+            <Typography >{username}</Typography>
             </>
           )}
         </Box>
