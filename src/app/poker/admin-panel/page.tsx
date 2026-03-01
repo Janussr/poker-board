@@ -20,7 +20,7 @@ import {
 } from "@mui/material";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { getAllGames, cancelGame, startGame, endGame, addParticipants, removeParticipant, addScore, removePoints, addPointsBulk } from "@/lib/api/games";
+import { getAllGames, cancelGame, startGame, endGame, addParticipants, removeParticipant, addScore, removePoints, addPointsBulk, removeGame } from "@/lib/api/games";
 import { getAllUsers } from "@/lib/api/users";
 import { Score } from "@/lib/models/score";
 import { Game, Participant } from "@/lib/models/game";
@@ -41,6 +41,8 @@ export default function AdminPanelPage() {
   const [endGameConfirmOpen, setEndGameConfirmOpen] = useState(false);
   const [participantToRemove, setParticipantToRemove] = useState<Participant | null>(null);
   const [removeParticipantConfirmOpen, setRemoveParticipantConfirmOpen] = useState(false);
+  const [removeGameConfirmOpen, setRemoveGameConfirmOpen] = useState(false);
+  const [gameToRemove, setGameToRemove] = useState<Game | null>(null);
 
   // 🔐 Route protection
   useEffect(() => {
@@ -218,6 +220,32 @@ export default function AdminPanelPage() {
     }
   };
 
+
+  const handleRemoveGameClick = (game: Game) => {
+    setGameToRemove(game);
+    setRemoveGameConfirmOpen(true);
+  };
+
+  const handleCancelRemoveGame = () => {
+    setGameToRemove(null);
+    setRemoveGameConfirmOpen(false);
+  };
+
+  const handleConfirmRemoveGame = async () => {
+    if (!gameToRemove) return;
+
+    try {
+      await removeGame(gameToRemove.id);
+      fetchGames();
+    } catch (err) {
+      alert("Could not delete game");
+    } finally {
+      setRemoveGameConfirmOpen(false);
+      setGameToRemove(null);
+    }
+  };
+
+
   //Keep this just above return
   if (!isLoggedIn || role !== "Admin") {
     return null;
@@ -311,6 +339,7 @@ export default function AdminPanelPage() {
                 )}
               </Stack>
             ))}
+
             <Dialog
               open={removeParticipantConfirmOpen}
               onClose={handleCancelRemoveParticipant}
@@ -370,20 +399,47 @@ export default function AdminPanelPage() {
         </Card>
       )}
 
+      <Dialog open={removeGameConfirmOpen} onClose={handleCancelRemoveGame}>
+        <DialogTitle>Delete game?</DialogTitle>
+        <DialogContent>
+          Are you sure you want to permanently delete Game #{gameToRemove?.gameNumber}?
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelRemoveGame}>No</Button>
+          <Button color="error" onClick={handleConfirmRemoveGame}>
+            Yes, delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <Typography variant="h5" mt={4}>All Games</Typography>
       {[...games]
         .sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())
         .map((g) => (
           <Card key={g.id} sx={{ mt: 2 }}>
             <CardContent>
-              <Typography>
-                Game #{g.gameNumber} — {g.isFinished ? "Finished" : "Active"}
-              </Typography>
-              <Link href={`/poker/game-results/${g.id}`} passHref>
-                <Button variant="outlined" size="small">
-                  View scoreboard
-                </Button>
-              </Link>
+              <Stack direction="row" spacing={2} alignItems="center">
+                <Typography sx={{ flex: 1 }}>
+                  Game #{g.gameNumber} — {g.isFinished ? "Finished" : "Active"}
+                </Typography>
+
+                <Link href={`/poker/game-results/${g.id}`} passHref>
+                  <Button variant="outlined" size="small">
+                    View scoreboard
+                  </Button>
+                </Link>
+
+                {g.isFinished && (
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    size="small"
+                    onClick={() => handleRemoveGameClick(g)}
+                  >
+                    Delete permanently
+                  </Button>
+                )}
+              </Stack>
             </CardContent>
           </Card>
         ))}
