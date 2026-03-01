@@ -40,8 +40,6 @@ export const addScore = (gameId: number, userId: number, value: number) =>
     method: "DELETE",
   });
 
-
-
 export const addParticipants = (gameId: number, userIds: number[]) =>
   apiFetch<Participant[]>(`/games/${gameId}/participants`, {
     method: "POST",
@@ -54,8 +52,21 @@ export const removeParticipant = (gameId: number, userId: number) =>
   });
 
   export const removeGame = (gameId: number) =>
-  apiFetch<Participant[]>(`/games/remove/${gameId}`, {
+  apiFetch<void>(`/games/remove/${gameId}`, {
     method: "DELETE",
   });
 
-  
+export const updateRules = (gameId: number, rebuyValue: number, bountyValue: number) =>
+  apiFetch(`/games/${gameId}/rules`, {
+    method: "PATCH",
+    body: { rebuyValue, bountyValue } as any,
+  });
+
+export const rebuy = (gameId: number) =>
+  apiFetch(`/games/${gameId}/rebuy`, { method: "POST" });
+
+export const registerKnockout = (gameId: number, knockedOutUserId: number) =>
+  apiFetch(`/games/${gameId}/bounty`, {
+    method: "POST",
+    body: { knockedOutUserId } as any,
+  });

@@ -12,7 +12,7 @@ import {
   Divider,
 } from "@mui/material";
 
-import { getAllGames, addParticipants as apiJoinGame, addScore } from "@/lib/api/games";
+import { getAllGames, addParticipants as apiJoinGame, addScore, rebuy, registerKnockout } from "@/lib/api/games";
 import { Game } from "@/lib/models/game";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
@@ -23,6 +23,8 @@ export default function ActiveGamePlayerPage() {
   const [hasJoined, setHasJoined] = useState(false);
   const { userId, username, numericUserId } = useAuth();
   const router = useRouter();
+  const [knockoutUserId, setKnockoutUserId] = useState("");
+  const [loadingAction, setLoadingAction] = useState(false);
 
   // Fetch active game
   useEffect(() => {
@@ -75,6 +77,37 @@ export default function ActiveGamePlayerPage() {
     }
   };
 
+  const handleRebuy = async () => {
+    if (!currentGame) return;
+
+    try {
+      setLoadingAction(true);
+      await rebuy(currentGame.id);
+      fetchActiveGame();
+    } catch (err: any) {
+      alert(err.message || "Rebuy failed");
+    } finally {
+      setLoadingAction(false);
+    }
+  };
+
+  const handleKnockout = async () => {
+    if (!currentGame || !knockoutUserId) return;
+
+    try {
+      setLoadingAction(true);
+      await registerKnockout(currentGame.id, Number(knockoutUserId));
+      setKnockoutUserId("");
+      fetchActiveGame();
+    } catch (err: any) {
+      alert(err.message || "Knockout failed");
+    } finally {
+      setLoadingAction(false);
+    }
+  };
+
+
+
   if (!currentGame) {
     return (
       <Box sx={{ maxWidth: 600, mx: "auto", mt: 6, textAlign: "center" }}>
@@ -82,11 +115,13 @@ export default function ActiveGamePlayerPage() {
       </Box>
     );
   }
-
   const myTotal = currentGame.scores
     .filter((s) => s.userId === Number(userId))
     .reduce((sum, s) => sum + s.points, 0);
 
+  const me = currentGame.participants.find(
+    (p) => p.userId === Number(userId)
+  );
   return (
     <Box sx={{ maxWidth: 600, mx: "auto", mt: 4, px: 2 }}>
       <Typography variant="h4" mb={3} textAlign="center" fontWeight="bold">
@@ -111,6 +146,26 @@ export default function ActiveGamePlayerPage() {
               <Typography mb={2} fontWeight="bold">
                 Playing as: {username}
               </Typography>
+
+              <Box
+                sx={{
+                  p: 2,
+                  borderRadius: 2,
+                  bgcolor: "background.paper",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  mb: 2,
+                }}
+              >
+                <Typography fontWeight="bold">Your game status</Typography>
+
+                <Typography>
+                   Rebuys used: <b>{me?.rebuyCount ?? 0}</b>
+                </Typography>
+
+                <Typography>
+                   Bounties on you: <b>{me?.activeBounties ?? 0}</b>
+                </Typography>
+              </Box>
 
               <Stack spacing={2}>
                 <TextField
@@ -137,6 +192,60 @@ export default function ActiveGamePlayerPage() {
                 >
                   Add points
                 </Button>
+
+                <Divider sx={{ my: 2 }} />
+
+                {currentGame.rebuyValue && (
+                  <Typography variant="caption" color="text.secondary">
+                    Rebuy costs {currentGame.rebuyValue} points
+                  </Typography>
+                )}
+
+                {currentGame.bountyValue && (
+                  <Typography variant="caption" color="text.secondary">
+                    Knockout gives {currentGame.bountyValue} points per bounty on target
+                  </Typography>
+                )}
+
+
+                {currentGame.rebuyValue && (
+                  <Button
+                    variant="outlined"
+                    color="warning"
+                    onClick={handleRebuy}
+                    disabled={loadingAction || currentGame.isFinished}
+                  >
+                    Rebuy (-{currentGame.rebuyValue} points)
+                  </Button>
+                )}
+
+                {currentGame.bountyValue && (
+                  <Stack spacing={1}>
+                    <TextField
+                      select
+                      label="Who did you knock out?"
+                      value={knockoutUserId}
+                      onChange={(e) => setKnockoutUserId(e.target.value)}
+                    >
+                      {currentGame.participants
+                        .filter((p) => p.userId !== Number(userId))
+                        .map((p) => (
+                          <option key={p.userId} value={p.userId}>
+                            {p.userName}
+                          </option>
+                        ))}
+                    </TextField>
+
+                    <Button
+                      variant="outlined"
+                      color="success"
+                      onClick={handleKnockout}
+                      disabled={loadingAction || !knockoutUserId || currentGame.isFinished}
+                    >
+                      Register Knockout (+{currentGame.bountyValue} bounty)
+                    </Button>
+                  </Stack>
+                )}
 
                 <Divider sx={{ my: 2 }} />
 

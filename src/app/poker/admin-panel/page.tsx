@@ -20,7 +20,7 @@ import {
 } from "@mui/material";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { getAllGames, cancelGame, startGame, endGame, addParticipants, removeParticipant, addScore, removePoints, addPointsBulk, removeGame } from "@/lib/api/games";
+import { getAllGames, cancelGame, startGame, endGame, addParticipants, removeParticipant, addScore, removePoints, addPointsBulk, removeGame, updateRules } from "@/lib/api/games";
 import { getAllUsers } from "@/lib/api/users";
 import { Score } from "@/lib/models/score";
 import { Game, Participant } from "@/lib/models/game";
@@ -43,6 +43,9 @@ export default function AdminPanelPage() {
   const [removeParticipantConfirmOpen, setRemoveParticipantConfirmOpen] = useState(false);
   const [removeGameConfirmOpen, setRemoveGameConfirmOpen] = useState(false);
   const [gameToRemove, setGameToRemove] = useState<Game | null>(null);
+  const [rebuyValue, setRebuyValue] = useState<number | "">("");
+  const [bountyValue, setBountyValue] = useState<number | "">("");
+  const [savingRules, setSavingRules] = useState(false);
 
   // 🔐 Route protection
   useEffect(() => {
@@ -81,6 +84,9 @@ export default function AdminPanelPage() {
         const participants = active.participants || [];
         const scores = active.scores || [];
         setCurrentGame({ ...active, participants, scores });
+
+        setRebuyValue(active.rebuyValue ?? "");
+        setBountyValue(active.bountyValue ?? "");
 
         const inputs: { [key: number]: string } = {};
         participants.forEach(p => (inputs[p.userId] = ""));
@@ -246,6 +252,27 @@ export default function AdminPanelPage() {
   };
 
 
+  const handleSaveRules = async () => {
+    if (!currentGame) return;
+
+    try {
+      setSavingRules(true);
+
+      await updateRules(
+        currentGame.id,
+        Number(rebuyValue),
+        Number(bountyValue)
+      );
+
+      fetchGames();
+    } catch (err) {
+      alert("Could not save rules");
+      console.error(err);
+    } finally {
+      setSavingRules(false);
+    }
+  };
+
   //Keep this just above return
   if (!isLoggedIn || role !== "Admin") {
     return null;
@@ -268,6 +295,40 @@ export default function AdminPanelPage() {
               Started: {new Date(currentGame.startedAt).toLocaleString("da-DK")}
             </Typography>
 
+            <Divider sx={{ my: 2 }} />
+            {/* Set value of rebuy and bounty */}
+            <Typography variant="subtitle1">Game Rules</Typography>
+            <Stack direction="row" spacing={2} alignItems="center" mb={2}>
+              <TextField
+                size="small"
+                type="number"
+                label="Rebuy value"
+                value={rebuyValue}
+                onChange={(e) => setRebuyValue(e.target.value === "" ? "" : Number(e.target.value))}
+                sx={{ width: 150 }}
+              />
+
+
+              <TextField
+                size="small"
+                type="number"
+                label="Bounty value"
+                value={bountyValue}
+                onChange={(e) => setBountyValue(e.target.value === "" ? "" : Number(e.target.value))}
+                sx={{ width: 150 }}
+              />
+
+              <Button
+                variant="contained"
+                onClick={handleSaveRules}
+                disabled={savingRules}
+              >
+                Save rules
+              </Button>
+            </Stack>
+            <Typography variant="caption" color="text.secondary">
+              Current rules: Rebuy = {currentGame.rebuyValue ?? "-"} / Bounty = {currentGame.bountyValue ?? "-"}
+            </Typography>
             <Divider sx={{ my: 2 }} />
 
             {/* Add participant */}

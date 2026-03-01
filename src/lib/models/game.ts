@@ -30,6 +30,8 @@ export interface Game {
   startedAt: string;
   endedAt?: string;
   isFinished: boolean;
+  rebuyValue: number;
+  bountyValue: number;
   participants: Participant[];
   scores: Score[];
   winner?: Winner | null;
@@ -38,6 +40,8 @@ export interface Game {
 export interface Participant {
   userId: number;
   userName: string;
+  rebuyCount: number;
+  activeBounties: number;
 }
 
 export interface HistoryEntry {
